@@ -5,7 +5,7 @@ python:
 services:
   - mongodb
 
-before_script
+before_script:
   - mongo --eval 'rs.status()'
 
 script:
