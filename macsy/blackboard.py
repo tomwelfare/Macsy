@@ -1,6 +1,6 @@
 
 
-__all__ = ['']
+__all__ = ['Blackboard']
 
 class Blackboard():
 
@@ -37,12 +37,12 @@ class Blackboard():
 	__counter_collection = None
 
 	def __init__(self, database, blackboard_name, admin_mode=False):
-		__db = database
-		__name = blackboard_name
-		__admin_mode = admin_mode
-		__document_collection = __db[blackboard_name]
-		__tag_collection = __db[blackboard_name + '_TAGS']
-		__counter_collection = __db[blackboard_name + '_COUNTER']
+		self.__db = database
+		self.__name = blackboard_name
+		self.__admin_mode = admin_mode
+		self.__document_collection = self.__db[blackboard_name]
+		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
+		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
 
 	def get_type(database, blackboard_name, blackboard_type = counter_type_standard):
 		collection = database[blackboard_name + '_COUNTER']

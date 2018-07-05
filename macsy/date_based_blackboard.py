@@ -1,4 +1,6 @@
-__all__ = ['']
+from macsy import Blackboard
+
+__all__ = ['DateBasedBlackboard']
 
 class DateBasedBlackboard(Blackboard):
 
@@ -12,9 +14,9 @@ class DateBasedBlackboard(Blackboard):
 	__counter_collection = None
 
 	def __init__(self, database, blackboard_name, admin_mode=False):
-		__db = database
-		__name = blackboard_name
-		__admin_mode = admin_mode
-		__document_collections[0] = __db[blackboard_name]
-		__tag_collection = __db[blackboard_name + '_TAGS']
-		__counter_collection = __db[blackboard_name + '_COUNTER']
+		self.__db = database
+		self.__name = blackboard_name
+		self.__admin_mode = admin_mode
+		self.__document_collections[0] = self.__db[blackboard_name]
+		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
+		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']

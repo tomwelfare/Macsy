@@ -1,7 +1,8 @@
 from pymongo import MongoClient
 import urllib.parse
+from macsy import Blackboard, DateBasedBlackboard
 
-__all__ = ['']
+__all__ = ['BlackboardAPI']
 
 class BlackboardAPI():
 
@@ -14,31 +15,31 @@ class BlackboardAPI():
 	__protected_names = ['ARTICLE','FEED','OUTLET','TWEET','URL','MODULE','MODULE_RUN']
 
 	def __init__(self, settings, admin_mode=False, read_primaries=False):
-		if _valid_settings(settings):
-			__read_primaries = read_primaries
-			__admin_mode = _check_admin_attempt(settings, admin_mode)
-			connection_str = _parse_connection_string(settings, read_primaries)	
-			__client = MongoClient(connection_str)
-			__db = __client[settings.dbname]
+		if self._valid_settings(settings):
+			self.__read_primaries = read_primaries
+			self.__admin_mode = self._check_admin_attempt(settings, admin_mode)
+			connection_str = self._parse_connection_string(settings, read_primaries)	
+			self.__client = MongoClient(connection_str)
+			self.__db = __client[settings.dbname]
 
-	def load_blackboard(blackboard_name, date_based=None):
-		if _valid_blackboard_name(blackboard_name):
+	def load_blackboard(self, blackboard_name, date_based=None):
+		if self._valid_blackboard_name(blackboard_name):
 			if date_based is None:
-				blackboard_type = Blackboard.get_type(__db, blackboard_name)
+				blackboard_type = Blackboard.get_type(self.__db, blackboard_name)
 			if date_based or blackboard_type == Blackboard.counter_type_date_based:
-				return DateBasedBlackboard(__db, blackboard_name, __admin_mode)
+				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
-				return Blackboard(__db, blackboard_name, __admin_mode)
+				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
 
-	def drop_blackboard(blackboard_name):
+	def drop_blackboard(self, blackboard_name):
 		''' Drop a blackboard from the database, use with caution!'''
-		if _valid_blackboard_name(blackboard_name):
-			if blackboard_name.upper() in __protected_names and not __admin_mode:
+		if self._valid_blackboard_name(blackboard_name):
+			if blackboard_name.upper() in self.__protected_names and not self.__admin_mode:
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
 				return False
 			else:
 				# TODO: Deal with the case of dropping every year from a date-based blackboard
-				return __db.drop_collection(blackboard_name)
+				return self.__db.drop_collection(blackboard_name)
 		
 	def _valid_settings(self, settings):
 		''' Validate the settings input by the user, checking if the right fields are present.'''
