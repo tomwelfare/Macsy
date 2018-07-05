@@ -21,11 +21,11 @@ class BlackboardAPI():
 			self.__admin_mode = self._check_admin_attempt(settings, admin_mode)
 			connection_str = self._parse_connection_string(settings, read_primaries)	
 			self.__client = MongoClient(connection_str)
-			self.__db = self.__client[settings.dbname]
+			self.__db = self.__client[settings['dbname']]
 
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
-			if date_based or (date_based is None and self.get_blackboard_type(self.__db, blackboard_name) == Blackboard.counter_type_date_based):
+			if date_based or (date_based is None and self.get_blackboard_type(blackboard_name) == Blackboard.counter_type_date_based):
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
 				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
@@ -74,10 +74,10 @@ class BlackboardAPI():
 		Parse the connection string details from the settings object, to be 
 		passed to the MongoClient.
 		'''
-		dbuser = urllib.parse.quote_plus(settings.user)
-		dbpass = urllib.parse.quote_plus(settings.password)
-		dbname = settings.dbname
-		dburl = settings.dburl.replace('mongodb://','').strip('/')
+		dbuser = urllib.parse.quote_plus(settings['user'])
+		dbpass = urllib.parse.quote_plus(settings['password'])
+		dbname = settings['dbname']
+		dburl = settings['dburl'].replace('mongodb://','').strip('/')
 		read_pref = '?readPreference=secondary'
 		if read_primaries is True:
 			read_pref = ''
@@ -89,8 +89,8 @@ class BlackboardAPI():
 		Check if the user has rights to run in admin_mode, and salt their
 		password if not
 		'''
-		if settings.user == self.__admin_user:
+		if settings['user'] == self.__admin_user:
 			return admin_mode
 		else:
-			settings.password += str(self.__salt)
+			settings['password'] += str(self.__salt)
 			return False

@@ -1,6 +1,6 @@
 from macsy import *
 
-settings = {'user' : 'test_user', 'password' : 'password', 'dbname' : 'testdb', 'dburl' : 'mongodb://enm-nc-web.enm.bris.ac.uk:27017/'}
+settings = {'user' : 'test_user', 'password' : 'password', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017/'}
 api = BlackboardAPI(settings)
 bb = api.load_blackboard('ARTICLE') # date-based
 
