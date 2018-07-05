@@ -8,5 +8,9 @@ services:
 before_script:
   - mongo --eval 'rs.status()'
 
+install:
+  - pip install pylint
+  - pip install -r requirements.txt
+
 script:
-  - pylint --errors-only run.py
+  - pylint --errors-only macsy
