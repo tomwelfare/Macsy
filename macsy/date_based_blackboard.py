@@ -44,7 +44,7 @@ class DateBasedBlackboard(Blackboard):
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
 		sort = { Blackboard.doc_id : kwargs.pop('sort', pymongo.DESCENDING)}
-		query = self._build_query(kwargs)
+		query = self._build_query(**kwargs)
 		results = []
 		for year in range(self.__min_year, self.__max_year): # assumes no date given
 			results.append(self.__document_collections[year].find(query).limit(max_docs).sort(sort))
