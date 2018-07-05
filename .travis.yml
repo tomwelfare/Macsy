@@ -2,5 +2,11 @@ language: python
 python:
   - "3.6"
 
+services:
+  - mongodb
+
+before_script
+  - mongo --eval 'rs.status()'
+
 script:
   - pylint --errors-only run.py
