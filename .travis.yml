@@ -3,4 +3,4 @@ python:
   - "3.6"
 
 script:
-  - pylint --errors-only macsy/.
+  - pylint --errors-only macsy
