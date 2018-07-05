@@ -1,7 +1,6 @@
 from pymongo import MongoClient
 import urllib.parse
-import Blackboard
-import DateBasedBlackboard
+from macsy import Blackboard, DateBasedBlackboard
 
 __all__ = ['BlackboardAPI']
 

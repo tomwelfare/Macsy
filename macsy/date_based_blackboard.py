@@ -1,4 +1,4 @@
-import Blackboard
+from macsy import Blackboard
 
 __all__ = ['DateBasedBlackboard']
 
