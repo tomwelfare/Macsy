@@ -1,7 +1,7 @@
 from pymongo import MongoClient
 import urllib.parse
-from macsy.blackboard import Blackboard
-from macsy.date_based_blackboard import DateBasedBlackboard
+import Blackboard
+import DateBasedBlackboard
 
 __all__ = ['BlackboardAPI']
 
@@ -42,7 +42,7 @@ class BlackboardAPI():
 				# TODO: Deal with the case of dropping every year from a date-based blackboard
 				return self.__db.drop_collection(blackboard_name)
 
-	def get_blackboard_type(self, blackboard_name, blackboard_type = counter_type_standard):
+	def get_blackboard_type(self, blackboard_name, blackboard_type = Blackboard.counter_type_standard):
 		collection = self.__db[blackboard_name + '_COUNTER']
 		result = collection.find_one({'_id' : Blackboard.counter_type})
 		if result:

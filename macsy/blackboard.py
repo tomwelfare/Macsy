@@ -1,6 +1,6 @@
 __all__ = ['Blackboard']
 
-class Blackboard():g
+class Blackboard():
 
 	#Error codes
 	_error_doc_not_found = None
@@ -41,5 +41,3 @@ class Blackboard():g
 		self.__document_collection = self.__db[blackboard_name]
 		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
 		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
-
-
