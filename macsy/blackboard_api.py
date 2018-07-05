@@ -1,6 +1,5 @@
 from pymongo import MongoClient
 import urllib.parse
-from macsy import Blackboard
 
 __all__ = ['']
 
