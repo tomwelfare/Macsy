@@ -1,2 +1,2 @@
-pymongo==3.7.0
+pymongo==2.7.0
 urllib3==1.7.1

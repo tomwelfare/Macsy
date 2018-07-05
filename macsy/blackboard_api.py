@@ -11,7 +11,7 @@ class BlackboardAPI():
 	__db = None
 	__admin_mode = False
 	__admin_user = 'dbadmin'
-	__salt = urllib.parse.quote_plus(')Djmsn)p')
+	__salt = ')Djmsn)p'
 	__read_primaries = False
 	__protected_names = ['ARTICLE','FEED','OUTLET','TWEET','URL','MODULE','MODULE_RUN']
 
@@ -26,8 +26,10 @@ class BlackboardAPI():
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
 			if date_based or (date_based is None and self.get_blackboard_type(blackboard_name) == Blackboard.counter_type_date_based):
+				print("Loading date-based Blackboard")
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
+				print("Loading standard Blackboard")
 				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
 
 	def drop_blackboard(self, blackboard_name):
@@ -65,7 +67,7 @@ class BlackboardAPI():
 		forbidden characters.
 		'''
 		if '$' in blackboard_name or ' ' in blackboard_name or '_' in blackboard_name:
-			raise ValueError('Forbidden characters in blackboard name (\'$\',\'_\',\' \')')
+			raise ValueError('Forbidden characters in blackboard name ("$","_"," ")')
 			return False
 		return True
 

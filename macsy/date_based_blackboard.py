@@ -1,6 +1,7 @@
 from macsy.blackboard import Blackboard
 from macsy.blackboard_cursor import BlackboardCursor
 import pymongo
+import sys
 
 __all__ = ['DateBasedBlackboard']
 
@@ -29,24 +30,29 @@ class DateBasedBlackboard(Blackboard):
 
 	def _populate_document_collections(self, blackboard_name):
 		for coll in self.__db.collection_names():
-			if blackboard_name in coll and coll.split('_')[1].isdigit():
-				year = coll.split('_')[1]
-				self.__document_collections[int(year)] = self.__db[coll]
-				self.__max_year = max(self.__max_year, year)
-				self.__min_year = min(self.__min_year, year)
+			try:
+				if blackboard_name in coll and coll.split('_')[1].isdigit():
+					year = int(coll.split('_')[1])
+					self.__document_collections[year] = self.__db[coll]
+					self.__max_year = max(self.__max_year, year)
+					self.__min_year = min(self.__min_year, year)
+			except IndexError:
+				print('Blackboard is not date-based. Exiting...')
+				sys.exit(0)
+
 	
 	def count(self):
 		total = 0
-		for year in range(self.__min_year, self.__max_year):
+		for year in range(self.__min_year, self.__max_year+1):
 			total += self.__document_collections[year].count()
 		return total
 
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
-		sort = { Blackboard.doc_id : kwargs.pop('sort', pymongo.DESCENDING)}
+		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
 		query = self._build_query(**kwargs)
 		results = []
-		for year in range(self.__min_year, self.__max_year): # assumes no date given
+		for year in range(self.__min_year, self.__max_year+1): # assumes no date given
 			results.append(self.__document_collections[year].find(query).limit(max_docs).sort(sort))
 		return BlackboardCursor(results)
 
