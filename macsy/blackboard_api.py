@@ -26,7 +26,7 @@ class BlackboardAPI():
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
 			if date_based is None:
-				blackboard_type = Blackboard.get_type(self.__db, blackboard_name)
+				blackboard_type = self.get_blackboard_type(self.__db, blackboard_name)
 			if date_based or blackboard_type == Blackboard.counter_type_date_based:
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
@@ -41,6 +41,13 @@ class BlackboardAPI():
 			else:
 				# TODO: Deal with the case of dropping every year from a date-based blackboard
 				return self.__db.drop_collection(blackboard_name)
+
+	def get_blackboard_type(self, blackboard_name, blackboard_type = counter_type_standard):
+		collection = self.__db[blackboard_name + '_COUNTER']
+		result = collection.find_one({'_id' : Blackboard.counter_type})
+		if result:
+			blackboard_type = result.get(Blackboard.counter_type)
+		return blackboard_type
 		
 	def _valid_settings(self, settings):
 		''' Validate the settings input by the user, checking if the right fields are present.'''

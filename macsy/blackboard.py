@@ -1,6 +1,6 @@
 __all__ = ['Blackboard']
 
-class Blackboard():
+class Blackboard():g
 
 	#Error codes
 	_error_doc_not_found = None
@@ -41,12 +41,5 @@ class Blackboard():
 		self.__document_collection = self.__db[blackboard_name]
 		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
 		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
-
-	def get_type(self, database, blackboard_name, blackboard_type = counter_type_standard):
-		collection = database[blackboard_name + '_COUNTER']
-		result = collection.find_one({'_id' : self.counter_type})
-		if result:
-			blackboard_type = result.get(self.counter_type)
-		return blackboard_type
 
 
