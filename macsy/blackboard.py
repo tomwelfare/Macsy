@@ -1,3 +1,5 @@
+import pymongo
+
 __all__ = ['Blackboard']
 
 class Blackboard():
@@ -41,3 +43,12 @@ class Blackboard():
 		self.__document_collection = self.__db[blackboard_name]
 		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
 		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
+
+	def count(self):
+		return self.__document_collection.count()
+
+	def find(self, **kwargs):
+		max_docs = kwargs.pop('max', 0)
+		sort = { Blackboard.doc_id : kwargs.pop('sort', pymongo.DESCENDING)}
+		query = self._build_query(kwargs)
+		return self.__document_collection.find(query).limit(max_docs).sort(sort)
