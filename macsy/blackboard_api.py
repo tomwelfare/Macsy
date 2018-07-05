@@ -32,6 +32,7 @@ class BlackboardAPI():
 				return Blackboard(__db, blackboard_name, __admin_mode)
 
 	def drop_blackboard(blackboard_name):
+		''' Drop a blackboard from the database, use with caution!'''
 		if _valid_blackboard_name(blackboard_name):
 			if blackboard_name.upper() in __protected_names and not __admin_mode:
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
