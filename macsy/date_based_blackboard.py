@@ -51,11 +51,13 @@ class DateBasedBlackboard(Blackboard):
 		return BlackboardCursor(results)
 
 	def get_earliest_date(self):
-		doc = self.__document_collections[self.__min_year].find().sort({Blackboard.doc_id : pymongo.ASCENDING}).limit(1)
-		return self.get_date(doc)
+		return self.__get_extremal_date(self.__min_year, pymongo.ASCENDING)
 
 	def get_latest_date(self):
-		doc = self.__document_collections[self.__max_year].find().sort({Blackboard.doc_id : pymongo.DESCENDING}).limit(1)
+		return self.__get_extremal_date(self.__max_year, pymongo.DESCENDING)
+
+	def __get_extremal_date(self, year, order):
+		doc = self.__document_collections[year].find().sort({Blackboard.doc_id : order}).limit(1)
 		return self.get_date(doc)
 
 	def get_date(self, doc):

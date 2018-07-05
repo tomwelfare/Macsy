@@ -26,8 +26,8 @@ class BlackboardAPI():
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
 			if date_based is None:
-				blackboard_type = self.get_blackboard_type(self.__db, blackboard_name)
-			if date_based or blackboard_type == Blackboard.counter_type_date_based:
+				date_based = Blackboard.counter_type_date_based == self.get_blackboard_type(self.__db, blackboard_name)
+			if date_based:
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
 				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
