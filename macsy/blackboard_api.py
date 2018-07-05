@@ -81,8 +81,7 @@ class BlackboardAPI():
 		read_pref = '?readPreference=secondary'
 		if read_primaries is True:
 			read_pref = ''
-		return 'mongodb://%s:%s@%s/%s%s' % 
-			(dbuser, dbpass, dburl, dbname, read_pref)
+		return 'mongodb://%s:%s@%s/%s%s' % (dbuser, dbpass, dburl, dbname, read_pref)
 
 
 	def _check_admin_attempt(self, settings, admin_mode):
