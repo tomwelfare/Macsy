@@ -55,3 +55,4 @@ class Blackboard():
 
 	def _build_query(self, **kwargs):
 		# Not yet implemented
+		return None

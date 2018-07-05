@@ -60,3 +60,4 @@ class DateBasedBlackboard(Blackboard):
 
 	def get_date(self, doc):
 		# Not yet implemented
+		return None
