@@ -6,7 +6,7 @@ services:
   - mongodb
 
 before_script:
-  - mongo --eval 'rs.status()'
+  - mongo --eval 'db.serverStatus()'
 
 install:
   - pip install pylint
