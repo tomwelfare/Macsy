@@ -21,7 +21,7 @@ class BlackboardCursor:
 			if doc is not None:
 				return doc
 			else:
-				self.__current++
+				self.__current += 1
 				self.__next__()
 		else:
 			return None

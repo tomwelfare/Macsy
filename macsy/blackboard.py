@@ -52,3 +52,7 @@ class Blackboard():
 		sort = { Blackboard.doc_id : kwargs.pop('sort', pymongo.DESCENDING)}
 		query = self._build_query(kwargs)
 		return self.__document_collection.find(query).limit(max_docs).sort(sort)
+
+	def _build_query(self, **kwargs):
+		# Not yet implemented
+		raise new NotImplementedError()
