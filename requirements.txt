@@ -1,3 +1,2 @@
-pylint==1.9.2
 pymongo==3.7.0
 urllib3==1.7.1
