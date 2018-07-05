@@ -56,3 +56,9 @@ class Blackboard():
 	def _build_query(self, **kwargs):
 		# Not yet implemented
 		return {}
+
+	def get_tag(self, tag_id=None, tag_name = None):
+		if tag_id is not None:
+			return self.__tag_collection.find_one({self.tag_id : tag_id})
+		if tag_name is not None:
+			return self.__tag_collection.find_one({self.tag_name : tag_name})

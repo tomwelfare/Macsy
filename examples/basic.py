@@ -21,7 +21,6 @@ tag = bb.get_tag(tag_id=5) # returns e.g. {'id' : 5, 'name' : 'FOR>Scraper'}
 tag = bb.get_tag(tag_name='FOR>Scraper') # returns e.g. {'id' : 5, 'name' : 'FOR>Scraper'}
 
 # document retrieval methods
-docs  = bb.find(only_id=True) # returns all doc_ids
 docs  = bb.find() # returns all docs
 
 doc_id = "5b3d51700000000000000000" # or ObjectId("5b3d51700000000000000000")?

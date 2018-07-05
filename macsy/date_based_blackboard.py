@@ -27,7 +27,6 @@ class DateBasedBlackboard(Blackboard):
 		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
 		self._populate_document_collections(blackboard_name)
 		
-
 	def _populate_document_collections(self, blackboard_name):
 		for coll in self.__db.collection_names():
 			try:
@@ -40,7 +39,6 @@ class DateBasedBlackboard(Blackboard):
 				print('Blackboard is not date-based. Exiting...')
 				sys.exit(0)
 
-	
 	def count(self):
 		total = 0
 		for year in range(self.__min_year, self.__max_year+1):
