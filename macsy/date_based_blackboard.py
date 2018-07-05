@@ -59,10 +59,4 @@ class DateBasedBlackboard(Blackboard):
 		return self.get_date(doc)
 
 	def get_date(self, doc):
-		raise new NotImplementedError()
-
-
-
-
-
-
+		# Not yet implemented

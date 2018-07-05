@@ -55,4 +55,3 @@ class Blackboard():
 
 	def _build_query(self, **kwargs):
 		# Not yet implemented
-		raise new NotImplementedError()
