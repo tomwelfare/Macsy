@@ -25,9 +25,7 @@ class BlackboardAPI():
 
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
-			if date_based is None:
-				date_based = Blackboard.counter_type_date_based == self.get_blackboard_type(self.__db, blackboard_name)
-			if date_based:
+			if date_based or (date_based is None and self.get_blackboard_type(self.__db, blackboard_name) == Blackboard.counter_type_date_based):
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
 				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
@@ -50,7 +48,10 @@ class BlackboardAPI():
 		return blackboard_type
 		
 	def _valid_settings(self, settings):
-		''' Validate the settings input by the user, checking if the right fields are present.'''
+		'''
+		Validate the settings input by the user, checking if the right fields 
+		are present.
+		'''
 		valid = settings is not None
 		for key in ['user', 'password', 'dbname', 'dburl']:
 			valid = key in settings
@@ -59,14 +60,20 @@ class BlackboardAPI():
 		return valid
 
 	def _valid_blackboard_name(self, blackboard_name):
-		''' Valid the blackboard_name input by the user, checking if it contains forbidden characters.'''
+		'''
+		Valid the blackboard_name input by the user, checking if it contains 
+		forbidden characters.
+		'''
 		if '$' in blackboard_name or ' ' in blackboard_name or '_' in blackboard_name:
 			raise ValueError('Forbidden characters in blackboard name (\'$\',\'_\',\' \')')
 			return False
 		return True
 
 	def _parse_connection_string(self, settings, read_primaries):
-		''' Parse the connection string details from the settings object, to be passed to the MongoClient'''
+		''' 
+		Parse the connection string details from the settings object, to be 
+		passed to the MongoClient.
+		'''
 		dbuser = urllib.parse.quote_plus(settings.user)
 		dbpass = urllib.parse.quote_plus(settings.password)
 		dbname = settings.dbname
@@ -74,11 +81,15 @@ class BlackboardAPI():
 		read_pref = '?readPreference=secondary'
 		if read_primaries is True:
 			read_pref = ''
-		return 'mongodb://%s:%s@%s/%s%s' % (dbuser, dbpass, dburl, dbname, read_pref)
+		return 'mongodb://%s:%s@%s/%s%s' % 
+			(dbuser, dbpass, dburl, dbname, read_pref)
 
 
 	def _check_admin_attempt(self, settings, admin_mode):
-		''' Check if the user has rights to run in admin_mode, and salt their password if not'''
+		'''
+		Check if the user has rights to run in admin_mode, and salt their
+		password if not
+		'''
 		if settings.user == self.__admin_user:
 			return admin_mode
 		else:
