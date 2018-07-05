@@ -26,14 +26,14 @@ class BlackboardAPI():
 		if _valid_blackboard_name(blackboard_name):
 			if date_based is None:
 				blackboard_type = Blackboard.get_type(__db, blackboard_name)
-			if date_based || blackboard_type == Blackboard.counter_type_date_based:
+			if date_based or blackboard_type == Blackboard.counter_type_date_based:
 				return DateBasedBlackboard(__db, blackboard_name, __admin_mode)
 			else:
 				return Blackboard(__db, blackboard_name, __admin_mode)
 
 	def drop_blackboard(blackboard_name):
 		if _valid_blackboard_name(blackboard_name):
-			if blackboard_name.upper() in __protected_names && not __admin_mode:
+			if blackboard_name.upper() in __protected_names and not __admin_mode:
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
 				return False
 			else:
@@ -51,7 +51,7 @@ class BlackboardAPI():
 
 	def _valid_blackboard_name(self, blackboard_name):
 		''' Valid the blackboard_name input by the user, checking if it contains forbidden characters.'''
-		if '$' in blackboard_name || ' ' in blackboard_name || '_' in blackboard_name:
+		if '$' in blackboard_name or ' ' in blackboard_name or '_' in blackboard_name:
 			raise ValueError('Forbidden characters in blackboard name (\'$\',\'_\',\' \')')
 			return False
 		return True
