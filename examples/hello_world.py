@@ -8,6 +8,7 @@ api = BlackboardAPI(settings)
 bb = api.load_blackboard('ARTICLE', date_based=True) # date-based
 
 print('Total docs: %d' % bb.count())
+print('Docs with tags: %d' % bb.find(tags = [1, 2, 3]).count())
 
-for doc in bb.find():
+for doc in bb.find(tags = [1, 2, 3.0]):
 	print('Title: %s' % doc.get('T'))

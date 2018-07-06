@@ -7,13 +7,9 @@ __all__ = ['BlackboardAPI']
 
 class BlackboardAPI():
 
-	__client = None
-	__db = None
-	__admin_mode = False
+	__protected_names = ['ARTICLE','FEED','OUTLET','TWEET','URL','MODULE','MODULE_RUN']
 	__admin_user = 'dbadmin'
 	__salt = ')Djmsn)p'
-	__read_primaries = False
-	__protected_names = ['ARTICLE','FEED','OUTLET','TWEET','URL','MODULE','MODULE_RUN']
 
 	def __init__(self, settings, admin_mode=False, read_primaries=False):
 		if self._valid_settings(settings):

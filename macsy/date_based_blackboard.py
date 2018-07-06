@@ -7,27 +7,18 @@ __all__ = ['DateBasedBlackboard']
 
 class DateBasedBlackboard(Blackboard):
 
-	# db objects and settings
-	__db = None
-	__name = None
-	__admin_mode = False
-
-	__document_collections = {}
-	__tag_collection = None
-	__counter_collection = None
-
-	__max_year = 0
-	__min_year = 99999
-
 	def __init__(self, database, blackboard_name, admin_mode=False):
 		self.__db = database
 		self.__name = blackboard_name
 		self.__admin_mode = admin_mode
 		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
 		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
+		self.__max_year = 0
+		self.__min_year = 99999
 		self._populate_document_collections(blackboard_name)
 		
 	def _populate_document_collections(self, blackboard_name):
+		self.__document_collections = {}
 		for coll in self.__db.collection_names():
 			try:
 				if blackboard_name in coll and coll.split('_')[1].isdigit():

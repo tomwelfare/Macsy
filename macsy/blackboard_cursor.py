@@ -4,14 +4,11 @@ __all__ = ['BlackboardCursor']
 
 class BlackboardCursor:
 
-	__cursors = []
-	__current = 0
-	__current_size = 1
-	__index = 0
-
 	def __init__(self, cursors):
 		if isinstance(cursors, type(pymongo.cursor)):
 			cursors = [cursors]
+		self.__current = 0
+		self.__index = 0
 		self.__cursors = cursors
 		self.__current_size = self.__cursors[self.__current].count()
 
