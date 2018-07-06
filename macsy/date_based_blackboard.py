@@ -31,18 +31,13 @@ class DateBasedBlackboard(Blackboard):
 				sys.exit(0)
 
 	def count(self):
-		total = 0
-		for year in range(self.__min_year, self.__max_year+1):
-			total += self.__document_collections[year].count()
-		return total
+		return sum(self.__document_collections[year].count() for year in range(self.__min_year, self.__max_year+1))
 
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
 		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
 		query = self._build_query(**kwargs)
-		results = []
-		for year in range(self.__min_year, self.__max_year+1): # assumes no date given
-			results.append(self.__document_collections[year].find(query).limit(max_docs).sort(sort))
+		results = [self.__document_collections[year].find(query).limit(max_docs).sort(sort) for year in range(self.__min_year, self.__max_year+1)]
 		return BlackboardCursor(results)
 
 	def get_earliest_date(self):

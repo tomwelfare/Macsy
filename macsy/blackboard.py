@@ -47,11 +47,12 @@ class Blackboard():
 	def _build_query(self, **kwargs):
 		#{ "_id" : { "$gte" : { "$oid" : "5b3e91366484863ad4e06a9b"} , "$lt" : { "$oid" : "5b3e91366484863ad4e06a9c"}} , "with" : { "$exists" : true} , "without" : { "$exists" : false} , "Tg" : { "$all" : [ 1]}}
 		query = {}
-		query['Tg'] = {"$all" : [int(x) for x in kwargs.pop('tags', [])]}
+		if 'tags' in kwargs:
+			query['Tg'] = {"$all" : [int(x) for x in kwargs.pop('tags', [])]}
 		return query
 
 	def get_tag(self, tag_id=None, tag_name = None):
 		if tag_id is not None:
-			return self.__tag_collection.find_one({self.tag_id : tag_id})
+			return self.__tag_collection.find_one({Blackboard.tag_id : tag_id})
 		if tag_name is not None:
-			return self.__tag_collection.find_one({self.tag_name : tag_name})
+			return self.__tag_collection.find_one({Blackboard.tag_name : tag_name})

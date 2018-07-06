@@ -31,7 +31,7 @@ class BlackboardAPI():
 	def drop_blackboard(self, blackboard_name):
 		''' Drop a blackboard from the database, use with caution!'''
 		if self._valid_blackboard_name(blackboard_name):
-			if blackboard_name.upper() in self.__protected_names and not self.__admin_mode:
+			if blackboard_name.upper() in BlackboardAPI.__protected_names and not self.__admin_mode:
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
 				return False
 			else:
@@ -89,8 +89,8 @@ class BlackboardAPI():
 		Check if the user has rights to run in admin_mode, and salt their
 		password if not
 		'''
-		if settings['user'] == self.__admin_user:
+		if settings['user'] == BlackboardAPI.__admin_user:
 			return admin_mode
 		else:
-			settings['password'] += str(self.__salt)
+			settings['password'] += str(BlackboardAPI.__salt)
 			return False
