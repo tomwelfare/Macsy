@@ -2,11 +2,14 @@ language: python
 python:
   - "3.6"
 
+services:
+  - mongodb
+
 install:
   - pip install pylint
   - pip install -r requirements.txt
 
 script:
+  - bash insertMongoData.sh
   - pylint --errors-only macsy
   - python -m unittest discover
-

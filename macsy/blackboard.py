@@ -48,7 +48,27 @@ class Blackboard():
 		#{ "_id" : { "$gte" : { "$oid" : "5b3e91366484863ad4e06a9b"} , "$lt" : { "$oid" : "5b3e91366484863ad4e06a9c"}} , "with" : { "$exists" : true} , "without" : { "$exists" : false} , "Tg" : { "$all" : [ 1]}}
 		query = {}
 		if 'tags' in kwargs:
-			query['Tg'] = {"$all" : [int(x) for x in kwargs.pop('tags', [])]}
+			[self.__build_tag_query(query, tag, "$all") for tag in kwargs.pop('tags', {})]
+		elif 'without_tags' in kwargs:
+			[self.__build_tag_query(query, tag, "$nin") for tag in kwargs.pop('without_tags', {})]
+		if 'fields' in kwargs:
+			[self.__build_field_query(query, field, True) for field in kwargs.pop('fields', {})]
+		if 'without_fields' in kwargs:
+			[self.__build_field_query(query, field, False) for field in kwargs.pop('without_fields', {})]
+
+		print(query)
+		return query
+
+	def __build_tag_query(self, query, tag, value):
+		# Need extra logic here to decide if it's a FOR tag or not, and put it in query['FOR'][value] instead
+		obj = query['Tg'] or {}
+		lst = obj[value] or []
+		lst.append(tag)
+		#query['Tg'][value].append(tag)
+		return query
+
+	def __build_field_query(self, query, field, value):
+		query[field] = {"$exists" : value}
 		return query
 
 	def get_tag(self, tag_id=None, tag_name = None):
