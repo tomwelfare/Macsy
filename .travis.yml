@@ -8,3 +8,5 @@ install:
 
 script:
   - pylint --errors-only macsy
+  - python -m unittest discover
+

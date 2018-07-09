@@ -11,7 +11,7 @@ class BlackboardAPI():
 	__admin_user = 'dbadmin'
 	__salt = ')Djmsn)p'
 
-	def __init__(self, settings, admin_mode=False, read_primaries=False):
+	def __init__(self, settings, admin_mode=False, read_primaries=False, MongoClient=MongoClient):
 		if self._valid_settings(settings):
 			self.__read_primaries = read_primaries
 			self.__admin_mode = self._check_admin_attempt(settings, admin_mode)
@@ -21,7 +21,7 @@ class BlackboardAPI():
 
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
-			if self.get_blackboard_type(blackboard_name, date_based) == Blackboard.counter_type_date_based:
+			if self.get_blackboard_type(blackboard_name, date_based=date_based) == Blackboard.counter_type_date_based:
 				print("Loading date-based Blackboard")
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
@@ -41,10 +41,12 @@ class BlackboardAPI():
 	def get_blackboard_type(self, blackboard_name, blackboard_type = Blackboard.counter_type_standard, date_based=None):
 		if date_based:
 			blackboard_type = Blackboard.counter_type_date_based
+
 		collection = self.__db[blackboard_name + '_COUNTER']
 		result = collection.find_one({'_id' : Blackboard.counter_type})
 		if result:
 			blackboard_type = result.get(Blackboard.counter_type)
+
 		return blackboard_type
 		
 	def _valid_settings(self, settings):

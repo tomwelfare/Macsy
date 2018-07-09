@@ -28,21 +28,21 @@ class Blackboard():
 	counter_type_date_based = 'DATE_BASED'
 
 	def __init__(self, database, blackboard_name, admin_mode=False):
-		self.__db = database
-		self.__name = blackboard_name
-		self.__admin_mode = admin_mode
-		self.__document_collection = self.__db[blackboard_name]
-		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
-		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
+		self._db = database
+		self._name = blackboard_name
+		self._admin_mode = admin_mode
+		self._document_collection = self._db[blackboard_name]
+		self._tag_collection = self._db[blackboard_name + '_TAGS']
+		self._counter_collection = self._db[blackboard_name + '_COUNTER']
 
 	def count(self):
-		return self.__document_collection.count()
+		return self._document_collection.count()
 
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
 		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
 		query = self._build_query(**kwargs)
-		return self.__document_collection.find(query).limit(max_docs).sort(sort)
+		return self._document_collection.find(query).limit(max_docs).sort(sort)
 
 	def _build_query(self, **kwargs):
 		#{ "_id" : { "$gte" : { "$oid" : "5b3e91366484863ad4e06a9b"} , "$lt" : { "$oid" : "5b3e91366484863ad4e06a9c"}} , "with" : { "$exists" : true} , "without" : { "$exists" : false} , "Tg" : { "$all" : [ 1]}}
@@ -53,6 +53,6 @@ class Blackboard():
 
 	def get_tag(self, tag_id=None, tag_name = None):
 		if tag_id is not None:
-			return self.__tag_collection.find_one({Blackboard.tag_id : tag_id})
+			return self._tag_collection.find_one({Blackboard.tag_id : tag_id})
 		if tag_name is not None:
-			return self.__tag_collection.find_one({Blackboard.tag_name : tag_name})
+			return self._tag_collection.find_one({Blackboard.tag_name : tag_name})
