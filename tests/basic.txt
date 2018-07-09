@@ -13,7 +13,7 @@ Doctest file for basic read usage of the Macsy api
 'Docs with tags: 3'
 
 >>> for doc in bb.find(with_tags=[1,2]):
->>>   print(doc.T)
+...     print(doc.T)
 'Title 2'
 'Title 3'
 
