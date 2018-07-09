@@ -1,21 +1,21 @@
 Doctest file for basic read usage of the Macsy api
 
->>>import sys
->>>sys.path.insert(0, '../macsy')
->>>from macsy.blackboard_api import BlackboardAPI
->>>settings = {'user' : 'test_user', 'password' : 'password', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017'}
->>>api = BlackboardAPI(settings)
->>>bb = api.load_blackboard('ARTICLE', date_based=True) # date-based
+>>> import sys
+>>> sys.path.insert(0, '../macsy')
+>>> from macsy.blackboard_api import BlackboardAPI
+>>> settings = {'user' : 'test_user', 'password' : 'password', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017'}
+>>> api = BlackboardAPI(settings)
+>>> bb = api.load_blackboard('ARTICLE', date_based=True) # date-based
 
->>>print('Total docs: %d' % bb.count())
+>>> print('Total docs: %d' % bb.count())
 'Total docs: 3'
-print('Docs with tags: %d' % bb.find().count())
+>>> print('Docs with tags: %d' % bb.find().count())
 'Docs with tags: 3'
 
->>>for doc in bb.find(with_tags=[1,2]):
->>>  print(doc.T)
+>>> for doc in bb.find(with_tags=[1,2]):
+>>>   print(doc.T)
 'Title 2'
 'Title 3'
 
->>>bb.get_tag(tag_id=5)
+>>> bb.get_tag(tag_id=5)
 '{_id : 5, Nm: "POST>Tag_5", Ctrl: 1}'
