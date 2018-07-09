@@ -89,5 +89,5 @@ docs = [x for x in bb.find(query={'T' : 'Title 3'})]
 assert len(docs) == 1, 'bb.find(query=query) found the wrong document: {}'.format(doc)
 
 # Test bb.get_date()
-date = bb.get_date(doc)
+date = bb.get_date(docs[0])
 assert str(date) == '2015-01-01 00:00:00+00:00', 'bb.get_date(doc) found the wrong date: {}'.format(date)
