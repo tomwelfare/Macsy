@@ -85,8 +85,8 @@ assert len(docs) == 2,	'bb.find(max_date=date, tags=mixed_ctrl_tags, fields=fiel
 #docs = [x for x in bb.find(min_date='01-01-2014', max_date='01-01-2018', max_docs = 1)]
 #assert len(docs) == 1, 'bb.find(min_date=date, max_date=date, max_docs=1) found the wrong document: {}'.format(docs)
 
-doc = [x for x in bb.find(query={'T' : 'Title 3'})][0]
-assert doc == {'T': 'Title 3', '_id': ObjectId('54a48e000000000000000000'), 'FOR': [21, 22], 'Tg': [3]}, 'bb.find(query=query) found the wrong document: {}'.format(doc)
+docs = [x for x in bb.find(query={'T' : 'Title 3'})] 
+assert len(docs) == 1, 'bb.find(query=query) found the wrong document: {}'.format(doc)
 
 # Test bb.get_date()
 date = bb.get_date(doc)
