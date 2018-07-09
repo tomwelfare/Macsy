@@ -1,4 +1,6 @@
 import pymongo
+from dateutil import parser as dtparser
+from bson.objectid import ObjectId
 
 __all__ = ['Blackboard']
 
@@ -35,17 +37,20 @@ class Blackboard():
 		self._tag_collection = self._db[blackboard_name + '_TAGS']
 		self._counter_collection = self._db[blackboard_name + '_COUNTER']
 
-	def count(self):
-		return self._document_collection.count()
+	def count(self, **kwargs):
+		query = self._build_query(**kwargs)
+		return self._document_collection.count(query)
 
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
 		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
-		query = self._build_query(**kwargs)
+		if 'query' not in kwargs:
+			query = self._build_query(**kwargs)
+		else:
+			query = kwargs.pop('query')
 		return self._document_collection.find(query).limit(max_docs).sort(sort)
 
 	def _build_query(self, **kwargs):
-		#{ "_id" : { "$gte" : { "$oid" : "5b3e91366484863ad4e06a9b"} , "$lt" : { "$oid" : "5b3e91366484863ad4e06a9c"}} , "with" : { "$exists" : true} , "without" : { "$exists" : false} , "Tg" : { "$all" : [ 1]}}
 		query = {}
 		if 'tags' in kwargs:
 			[self.__build_tag_query(query, tag, "$all") for tag in kwargs.pop('tags', {})]
@@ -55,8 +60,19 @@ class Blackboard():
 			[self.__build_field_query(query, field, True) for field in kwargs.pop('fields', {})]
 		if 'without_fields' in kwargs:
 			[self.__build_field_query(query, field, False) for field in kwargs.pop('without_fields', {})]
+		if 'min_date' in kwargs:
+			self.__build_date_query(query, kwargs.pop('min_date', None), '$gte')
+		if 'max_date' in kwargs:
+			self.__build_date_query(query, kwargs.pop('max_date', None), '$lt')
+		return query
 
-		print(query)
+	def __build_date_query(self, query, date, value):
+		if date:
+			dt_obj = dtparser.parse(str(date))
+			obj_id = ObjectId.from_datetime(dt_obj)
+			q = query.get('_id', {})
+			q[value] = obj_id
+			query['_id'] = q			
 		return query
 
 	def __build_tag_query(self, query, tag, value):

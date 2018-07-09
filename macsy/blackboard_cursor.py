@@ -1,28 +1,27 @@
 import pymongo
+import mongomock
+import sys
 
 __all__ = ['BlackboardCursor']
 
 class BlackboardCursor:
 
-	def __init__(self, cursors):
-		self.__cursors = []
-		if isinstance(cursors, type(pymongo.cursor)):
-			self.__cursors.append(cursors)
-		else:
-			self.__cursors.extend(cursors)
+	def __init__(self, cursors, max_docs=0):
+		self.__cursors = [x for x in cursors if x.count() > 0]
 		self.__current = 0
 		self.__index = 0
-		self.__current_size = self.__cursors[self.__current].count()
+		self.__max = max_docs # TODO
 
 	def __iter__(self):
 		return self
 
 	def __next__(self):
 		while self.__current < len(self.__cursors):
-			if self.__cursors[self.__current].alive:
-				return self.__cursors[self.__current].__next__()
-			self.__current += 1
+			if self.__index < self.__cursors[self.__current].count():
+				doc = self.__cursors[self.__current][self.__index]
+				self.__index += 1
+				return doc
+			else:
+				self.__index = 0
+				self.__current += 1
 		raise StopIteration()
-
-	def count(self):	
-		return sum(cursor.count() for cursor in self.__cursors)
