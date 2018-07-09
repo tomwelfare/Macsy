@@ -12,3 +12,4 @@ install:
 script:
   - bash insertMongoData.sh
   - pylint --errors-only macsy
+  - python -m doctest tests/basic.txt
