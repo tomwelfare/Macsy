@@ -4,14 +4,11 @@ python:
 
 services:
   - mongodb
-  
-before_script:
-  - sleep 15
-  - ./insertMongoData.sh
 
 install:
   - pip install pylint
   - pip install -r requirements.txt
 
 script:
+  - bash insertMongoData.sh
   - pylint --errors-only macsy
