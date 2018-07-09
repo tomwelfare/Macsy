@@ -8,30 +8,29 @@ __all__ = ['DateBasedBlackboard']
 class DateBasedBlackboard(Blackboard):
 
 	def __init__(self, database, blackboard_name, admin_mode=False):
-		self.__db = database
-		self.__name = blackboard_name
-		self.__admin_mode = admin_mode
+		super().__init__(database, blackboard_name, admin_mode=admin_mode)
+
 		self.__tag_collection = self.__db[blackboard_name + '_TAGS']
 		self.__counter_collection = self.__db[blackboard_name + '_COUNTER']
 		self.__max_year = 0
 		self.__min_year = 99999
-		self._populate_document_collections(blackboard_name)
-		
-	def _populate_document_collections(self, blackboard_name):
-		self.__document_collections = {}
-		for coll in self.__db.collection_names():
-			try:
-				if blackboard_name in coll and coll.split('_')[1].isdigit():
-					year = int(coll.split('_')[1])
-					self.__document_collections[year] = self.__db[coll]
-					self.__max_year = max(self.__max_year, year)
-					self.__min_year = min(self.__min_year, year)
-			except IndexError:
-				print('Blackboard is not date-based. Exiting...')
-				sys.exit(0)
+		self._populate_document_collections()
+
+	def _populate_document_collections(self):
+		colls = ((coll.split('_')[-1], coll) for coll in self.__db.collection_names() if self.__name in coll)
+
+		try:
+			colls = {(int(year), self.__db[coll]) for year, coll in colls if year.isdigit()}
+		except IndexError:
+			print('Blackboard is not date-based. Exiting...')
+			sys.exit(0)
+
+		self.__document_collections = colls
+		self.__max_year = max(colls.keys())
+		self.__min_year = min(colls.keys())
 
 	def count(self):
-		return sum(self.__document_collections[year].count() for year in range(self.__min_year, self.__max_year+1))
+		return sum(coll.count() for coll in self.__document_collections)
 
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
