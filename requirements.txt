@@ -1,3 +1,4 @@
 pymongo==2.7.0
 urllib3==1.7.1
 mongomock==2.0.0
+dateutil==2.7.3
