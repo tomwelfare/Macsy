@@ -1,3 +1,4 @@
+mongo testdb --eval 'db.createUser({user:"test_user",pwd:"password",roles:["readWrite"]});'
 mongo testdb --eval 'db.ARTICLE_2010.insert({_id: ObjectId("4c3658700000000000000000"), T: "Title 1", D: "Description 1", C: "Content 1", Tg: [1], FOR : [4]});'
 mongo testdb --eval 'db.ARTICLE_2011.insert({_id: ObjectId("4deffef00000000000000000"), T: "Title 2", D: "Description 2", C: "Content 2", Tg: [1, 2], FOR : [5]});'
 mongo testdb --eval 'db.ARTICLE_2012.insert({_id: ObjectId("4fd526f00000000000000000"), T: "Title 3", D: "Description 3", C: "Content 3", Tg: [1, 2, 3], FOR : [4, 5]});'
