@@ -60,19 +60,34 @@ class Blackboard():
 		return query
 
 	def __build_tag_query(self, query, tag, value):
-		# Need extra logic here to decide if it's a FOR tag or not, and put it in query['FOR'][value] instead
-		obj = query['Tg'] or {}
-		lst = obj[value] or []
-		lst.append(tag)
-		#query['Tg'][value].append(tag)
+		if type(tag) is str:
+			full_tag = self.get_tag(tag_name=tag)
+		else:
+			full_tag = self.get_tag(tag_id=tag)
+
+		field = 'Tg'
+		if 'Ctrl' in full_tag and full_tag['Ctrl']:
+			field = 'FOR'			
+
+		q = query.get(field, {value : []})
+		q[value].append(int(full_tag['_id']))
+		query[field] = q
 		return query
 
 	def __build_field_query(self, query, field, value):
 		query[field] = {"$exists" : value}
 		return query
 
-	def get_tag(self, tag_id=None, tag_name = None):
+	def get_tag(self, tag_id = None, tag_name = None):
 		if tag_id is not None:
 			return self._tag_collection.find_one({Blackboard.tag_id : tag_id})
 		if tag_name is not None:
 			return self._tag_collection.find_one({Blackboard.tag_name : tag_name})
+
+	def is_control_tag(self, tag_id = None, tag_name = None):
+		if tag_id is not None:
+			tag = self.get_tag(tag_id = tag_id)
+		elif tag_name is not None:
+			tag = self.get_tag(tag_name = tag_name)
+
+		return bool(tag['Ctrl'])

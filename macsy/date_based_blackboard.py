@@ -8,6 +8,7 @@ __all__ = ['DateBasedBlackboard']
 class DateBasedBlackboard(Blackboard):
 
 	def __init__(self, database, blackboard_name, admin_mode=False):
+		blackboard_name = blackboard_name.upper()
 		super().__init__(database, blackboard_name, admin_mode=admin_mode)
 
 		self._tag_collection = self._db[blackboard_name + '_TAGS']
@@ -50,5 +51,4 @@ class DateBasedBlackboard(Blackboard):
 		return self.get_date(doc)
 
 	def get_date(self, doc):
-		# Not yet implemented
-		return None
+		return doc[Blackboard.doc_id].generation_time
