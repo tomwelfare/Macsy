@@ -40,30 +40,18 @@ class BlackboardAPI():
 		if self._valid_blackboard_name(blackboard_name):
 			if blackboard_name.upper() in BlackboardAPI.__protected_names and not self.__admin_mode:
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
-				return False
 			else:
 				blackboard_type = self.get_blackboard_type(blackboard_name)
 				if blackboard_type == Blackboard.counter_type_standard:
-					for suffix in ['', Blackboard.counter_suffix, Blackboard.tag_suffix]:
-						self.__db.drop_collection(blackboard_name + suffix)
+					self.__drop_standard_blackboard(blackboard_name)
 				elif blackboard_type == Blackboard.counter_type_date_based:
-					for coll in self.__db.collection_names():
-						suffix = coll.split('_')[-1]
-						if blackboard_name == coll.split('_')[0] and (suffix.isdigit() or suffix == Blackboard.counter_suffix or Blackboard.tag_suffix):
-							self.__db.drop_collection(coll)
-				else:
-					return False
-				return True
-
+					self.__drop_date_based_blackboard(blackboard_name)
 
 	def get_blackboard_type(self, blackboard_name, date_based=None):
 		collection = self.__db[blackboard_name + Blackboard.counter_suffix]
 		result = collection.find_one({Blackboard.counter_id : Blackboard.counter_type})
 		if result is not None:
-			if date_based is True and result.get(Blackboard.counter_type) == Blackboard.counter_type_standard:
-				raise ValueError('{} is a standard blackboard, not date-based.'.format(blackboard_name))
-			if date_based is False and result.get(Blackboard.counter_type) == Blackboard.counter_type_date_based:
-				raise ValueError('{} is a date-based blackboard, not standard.'.format(blackboard_name))
+			self.__check_blackboard_type_errors((blackboard_name, result.get(Blackboard.counter_type), date_based))
 			return result.get(Blackboard.counter_type)
 		else:
 			return Blackboard.counter_type_date_based if date_based is True else Blackboard.counter_type_standard
@@ -103,3 +91,19 @@ class BlackboardAPI():
 		'''
 		self.__password += str(BlackboardAPI.__salt) if self.__username is not BlackboardAPI.__admin_user else ''
 		return True if self.__username == BlackboardAPI.__admin_user else False
+
+	def __drop_standard_blackboard(self, blackboard_name):
+		for suffix in ['', Blackboard.counter_suffix, Blackboard.tag_suffix]:
+			self.__db.drop_collection(blackboard_name + suffix)
+
+	def __drop_date_based_blackboard(self, blackboard_name):
+		for coll in self.__db.collection_names():
+			suffix = coll.split('_')[-1]
+			if blackboard_name == coll.split('_')[0] and (suffix.isdigit() or suffix in Blackboard.counter_suffix or Blackboard.tag_suffix):
+				self.__db.drop_collection(coll)
+
+	def __check_blackboard_type_errors(self, ntd):
+		if ntd[2] is True and ntd[1] == Blackboard.counter_type_standard:
+			raise ValueError('{} is a standard blackboard, not date-based.'.format(ntd[0]))
+		if ntd[2] is False and ntd[1] == Blackboard.counter_type_date_based:
+			raise ValueError('{} is a date-based blackboard, not standard.'.format(ntd[0]))
