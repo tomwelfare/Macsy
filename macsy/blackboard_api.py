@@ -11,20 +11,19 @@ class BlackboardAPI():
 	__admin_user = 'dbadmin'
 	__salt = ')Djmsn)p'
 
-	def __init__(self, settings, admin_mode=False, read_primaries=False, MongoClient=MongoClient):
+	def __init__(self, settings, MongoClient=MongoClient):
 		if self._valid_settings(settings):
-			self.__read_primaries = read_primaries
-			self.__admin_mode = self._check_admin_attempt(settings, admin_mode)
-			connection_str = self._parse_connection_string(settings, read_primaries)	
-			self.__client = MongoClient(connection_str)
+			self.__admin_mode = self._check_admin_attempt(settings)
+			self.__client = MongoClient(self._parse_connection_string(settings))
 			self.__db = self.__client[settings['dbname']]
 
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
-			return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode) \
-			if self.get_blackboard_type(blackboard_name, date_based=date_based)\
+			settings = (self.__db, blackboard_name, self.__admin_mode)
+			return DateBasedBlackboard(settings) \
+			if self.get_blackboard_type(blackboard_name, date_based)\
 			== Blackboard.counter_type_date_based \
-			else Blackboard(self.__db, blackboard_name, self.__admin_mode)
+			else Blackboard(settings)
 
 	def drop_blackboard(self, blackboard_name):
 		''' Drop a blackboard from the database, use with caution!'''
@@ -36,40 +35,35 @@ class BlackboardAPI():
 				# TODO: Deal with the case of dropping every year from a date-based blackboard
 				return self.__db.drop_collection(blackboard_name)
 
-	def get_blackboard_type(self, blackboard_name, blackboard_type = Blackboard.counter_type_standard, date_based=None):
+	def get_blackboard_type(self, blackboard_name, date_based=None):
 		if date_based is not None:
 			return Blackboard.counter_type_date_based if date_based else Blackboard.counter_type_standard
 
 		collection = self.__db[blackboard_name + '_COUNTER']
 		result = collection.find_one({'_id' : Blackboard.counter_type})
-		if result:
-			blackboard_type = result.get(Blackboard.counter_type)
-
-		return blackboard_type
+		return result.get(Blackboard.counter_type) if result is not None else None
 		
 	def _valid_settings(self, settings):
 		'''
 		Validate the settings input by the user, checking if the right fields 
 		are present.
 		'''
-		valid = settings is not None
-		for key in ['user', 'password', 'dbname', 'dburl']:
-			valid = key in settings
-		if not valid:
+		required_fields = ['user', 'password', 'dbname', 'dburl']
+		if len(set(required_fields).intersection(settings)) is not len(required_fields):
 			raise ValueError('Incorrect or incomplete database settings supplied.')
-		return valid
+		return True
 
 	def _valid_blackboard_name(self, blackboard_name):
 		'''
 		Valid the blackboard_name input by the user, checking if it contains 
 		forbidden characters.
 		'''
-		if '$' in blackboard_name or ' ' in blackboard_name or '_' in blackboard_name:
+		if any(x in blackboard_name for x in r" \$_"):
 			raise ValueError('Forbidden characters in blackboard name ("$","_"," ")')
 			return False
 		return True
 
-	def _parse_connection_string(self, settings, read_primaries):
+	def _parse_connection_string(self, settings):
 		''' 
 		Parse the connection string details from the settings object, to be 
 		passed to the MongoClient.
@@ -78,17 +72,14 @@ class BlackboardAPI():
 		dbpass = urllib.parse.quote_plus(settings['password'])
 		dbname = settings['dbname']
 		dburl = settings['dburl'].replace('mongodb://','').strip('/')
-		read_pref = '?readPreference=secondary' if read_primaries is False else ''
+		read_pref = '?readPreference=secondary'
 		return 'mongodb://%s:%s@%s/%s%s' % (dbuser, dbpass, dburl, dbname, read_pref)
 
 
-	def _check_admin_attempt(self, settings, admin_mode):
+	def _check_admin_attempt(self, settings):
 		'''
 		Check if the user has rights to run in admin_mode, and salt their
 		password if not
 		'''
-		if settings['user'] == BlackboardAPI.__admin_user:
-			return admin_mode
-		else:
-			settings['password'] += str(BlackboardAPI.__salt)
-			return False
+		settings['password'] += str(BlackboardAPI.__salt) if settings['user'] is not BlackboardAPI.__admin_user else ''
+		return True if settings['user'] == BlackboardAPI.__admin_user else False

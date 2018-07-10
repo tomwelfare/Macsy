@@ -7,14 +7,9 @@ __all__ = ['DateBasedBlackboard']
 
 class DateBasedBlackboard(Blackboard):
 
-	def __init__(self, database, blackboard_name, admin_mode=False):
-		blackboard_name = blackboard_name.upper()
-		super().__init__(database, blackboard_name, admin_mode=admin_mode)
-
-		self._tag_collection = self._db[blackboard_name + '_TAGS']
-		self._counter_collection = self._db[blackboard_name + '_COUNTER']
-		self._max_year = 0
-		self._min_year = 99999
+	def __init__(self, settings):
+		super().__init__((settings[0], settings[1].upper(), settings[2]))
+		self._max_year, self._min_year = 0, 99999
 		self._populate_document_collections()
 
 	def count(self, **kwargs):
@@ -44,6 +39,5 @@ class DateBasedBlackboard(Blackboard):
 		return [self._document_collections[year].find(qms[0]).limit(qms[1]).sort(qms[2]) for year in range(self._min_year, self._max_year+1)]
 
 	def _get_extremal_date(self, year, order):
-		doc = self._document_collections[year].find().sort({Blackboard.doc_id : order}).limit(1)
-		return self.get_date(doc)
+		return self.get_date(self._document_collections[year].find().sort({Blackboard.doc_id : order}).limit(1))
 

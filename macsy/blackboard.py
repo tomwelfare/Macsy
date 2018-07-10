@@ -18,6 +18,7 @@ class Blackboard():
 	doc_tags = 'Tg'
 	doc_for_tags = 'FOR'
 
+	tag_suffix = '_TAGS'
 	tag_id = '_id'
 	tag_name = 'Nm'
 	tag_control = 'Ctrl'
@@ -25,18 +26,17 @@ class Blackboard():
 	tag_control_for = 'FOR>'
 	tag_control_post = 'POST>'
 
+	counter_suffix = '_COUNTER'
 	counter_next = 'NEXT_ID'
 	counter_type = 'BLACKBOARD_TYPE'
 	counter_type_standard = 'STANDARD'
 	counter_type_date_based = 'DATE_BASED'
 
-	def __init__(self, database, blackboard_name, admin_mode=False):
-		self._db = database
-		self._name = blackboard_name
-		self._admin_mode = admin_mode
-		self._document_collection = self._db[blackboard_name]
-		self._tag_collection = self._db[blackboard_name + '_TAGS']
-		self._counter_collection = self._db[blackboard_name + '_COUNTER']
+	def __init__(self, settings):
+		self._db, self._name, self._admin_mode = settings
+		self._document_collection = self._db[self._name]
+		self._tag_collection = self._db[self._name + Blackboard.tag_suffix]
+		self._counter_collection = self._db[self._name + Blackboard.counter_suffix]
 
 	def count(self, **kwargs):
 		query = kwargs.get('query', self._build_query(**kwargs))
@@ -44,7 +44,8 @@ class Blackboard():
 
 	def find(self, **kwargs):
 		settings = (kwargs.get('query', self._build_query(**kwargs)), 
-			kwargs.pop('max', 0), [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
+			kwargs.pop('max', 0), 
+			[(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
 		result = self._get_result(settings)
 		return BlackboardCursor(result)
 
@@ -79,21 +80,17 @@ class Blackboard():
 				key, value = qw[k][1]((query, d, qw[k][0]))
 				query[key] = value
 
-		print(query)
 		return query
 
 	def __build_date_query(self, qdv):
-		field = Blackboard.doc_id
-		obj_id = ObjectId.from_datetime(dtparser.parse(str(qdv[1])))
-		q = qdv[0].get(field, {})
-		q[qdv[2]] = obj_id
-		return field, q
+		q = qdv[0].get(Blackboard.doc_id, {})
+		q[qdv[2]] = ObjectId.from_datetime(dtparser.parse(str(qdv[1])))
+		return Blackboard.doc_id, q
 
 	def __build_tag_query(self, qtv):
 		full_tag = self.get_tag(tag_name=qtv[1]) if type(qtv[1]) is str else self.get_tag(tag_id=qtv[1])
 		field = 'FOR' if ('Ctrl' in full_tag and full_tag['Ctrl']) else 'Tg'
 		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
-
 		q = qtv[0].get(field, {qtv[2] : [int(full_tag['_id'])]})
 		if int(full_tag['_id']) not in q[qtv[2]]:
 			q[qtv[2]].append(int(full_tag['_id']))
@@ -101,5 +98,4 @@ class Blackboard():
 		return field, q
 
 	def __build_field_query(self, qfv):
-		q = qfv[0].get(qfv[1], {'$exists' : qfv[2]})
-		return qfv[1], q
+		return qfv[1], qfv[0].get(qfv[1], {'$exists' : qfv[2]})
