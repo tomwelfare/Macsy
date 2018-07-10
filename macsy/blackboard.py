@@ -46,6 +46,7 @@ class Blackboard():
 		settings = (kwargs.get('query', self._build_query(**kwargs)), 
 			kwargs.pop('max', 0), 
 			[(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
+		print('Searching the data for: {}'.format(settings[0]))
 		result = self._get_result(settings)
 		return BlackboardCursor(result)
 
@@ -80,6 +81,7 @@ class Blackboard():
 				key, value = qw[k][1]((query, d, qw[k][0]))
 				query[key] = value
 
+		print(query)
 		return query
 
 	def __build_date_query(self, qdv):

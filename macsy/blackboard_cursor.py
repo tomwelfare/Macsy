@@ -2,12 +2,14 @@ import pymongo
 import mongomock
 import sys
 
+
 __all__ = ['BlackboardCursor']
 
 class BlackboardCursor:
 
 	def __init__(self, cursors, max_docs=0):
 		self.__cursors = [x for x in cursors if x.count() > 0]
+		print('\t->Cursor length from BlackboardCursor.init(): {}'.format(len(self.__cursors)))
 		self.__current = 0
 		self.__index = 0
 
@@ -18,6 +20,7 @@ class BlackboardCursor:
 		while self.__current < len(self.__cursors):
 			if self.__index < self.__cursors[self.__current].count():
 				doc = self.__cursors[self.__current][self.__index]
+				print('{} -> {}'.format(doc, doc['_id'].generation_time))
 				self.__index += 1
 				return doc
 			else:

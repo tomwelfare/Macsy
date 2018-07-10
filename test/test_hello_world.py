@@ -81,8 +81,10 @@ def test_bb_find(bb):
 	assert len(docs) == 3,	'bb.find(max_date=date, tags=mixed_tags) found the wrong documents: {}'.format(docs)
 	docs = [x for x in bb.find(tags = ['FOR>Tag_21', 15])]
 	assert len(docs) == 1,	'bb.find(tags=mixed_ctrl_tags) found the wrong documents: {}'.format(docs)
+	
 	docs = [x for x in bb.find(max_date=['21-01-2015'], min_date=['21-01-2010'], tags = ['POST>Tag_22', 3], fields=['T','Tg'], without_fields=['D'])]
 	assert len(docs) == 1,	'bb.find(max_date=date, min_date=date, tags=mixed_ctrl_tags, fields=fields, without_fields = without_fields) found the wrong documents: {}'.format(docs)
+	
 	doc = [x for x in bb.find(query={'T' : 'Title 3'})][0]
 	assert doc['T'] == 'Title 3', 'bb.find(query=query) found the wrong document: {}'.format(doc)
 
