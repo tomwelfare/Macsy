@@ -43,10 +43,9 @@ class Blackboard():
 		return self._document_collection.find(query).count()
 
 	def find(self, **kwargs):
-		max_docs = kwargs.pop('max', 0)
-		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
-		query = kwargs.get('query', self._build_query(**kwargs))
-		result = self._get_result(query, max_docs, sort)
+		settings = (kwargs.get('query', self._build_query(**kwargs)), 
+			kwargs.pop('max', 0), [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
+		result = self._get_result(settings)
 		return BlackboardCursor(result)
 
 	def get_tag(self, tag_id = None, tag_name = None):
@@ -62,8 +61,8 @@ class Blackboard():
 	def get_date(self, doc):
 		return doc[Blackboard.doc_id].generation_time
 
-	def _get_result(self, query, max_docs, sort):
-		return self._document_collection.find(query).limit(max_docs).sort(sort)
+	def _get_result(self, qms):
+		return self._document_collection.find(qms[0]).limit(qms[1]).sort(qms[2])
 
 	def _build_query(self, **kwargs):
 		qw = {'tags' : ('$all', self.__build_tag_query, {}), 
@@ -77,31 +76,30 @@ class Blackboard():
 			for d in kwargs.get(k,qw[k][2]):
 				assert type(kwargs.get(k,qw[k][2])) is list, \
 				'Argument needs to be a list: {}'.format(kwargs.get(k, qw[k][2]))
-				key, value = qw[k][1](query, d, qw[k][0])
+				key, value = qw[k][1]((query, d, qw[k][0]))
 				query[key] = value
 
 		print(query)
 		return query
 
-	def __build_date_query(self, query, date, value):
+	def __build_date_query(self, qdv):
 		field = Blackboard.doc_id
-		dt_obj = dtparser.parse(str(date))
-		obj_id = ObjectId.from_datetime(dt_obj)
-		q = query.get(field, {})
-		q[value] = obj_id
+		obj_id = ObjectId.from_datetime(dtparser.parse(str(qdv[1])))
+		q = qdv[0].get(field, {})
+		q[qdv[2]] = obj_id
 		return field, q
 
-	def __build_tag_query(self, query, tag, value):
-		full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
+	def __build_tag_query(self, qtv):
+		full_tag = self.get_tag(tag_name=qtv[1]) if type(qtv[1]) is str else self.get_tag(tag_id=qtv[1])
 		field = 'FOR' if ('Ctrl' in full_tag and full_tag['Ctrl']) else 'Tg'
-		if field in query and '$exists' in query[field]: del query[field]
+		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
 
-		q = query.get(field, {value : [int(full_tag['_id'])]})
-		if int(full_tag['_id']) not in q[value]:
-			q[value].append(int(full_tag['_id']))
+		q = qtv[0].get(field, {qtv[2] : [int(full_tag['_id'])]})
+		if int(full_tag['_id']) not in q[qtv[2]]:
+			q[qtv[2]].append(int(full_tag['_id']))
 
 		return field, q
 
-	def __build_field_query(self, query, field, value):
-		q = query.get(field, {'$exists' : value})
-		return field, q
+	def __build_field_query(self, qfv):
+		q = qfv[0].get(qfv[1], {'$exists' : qfv[2]})
+		return qfv[1], q
