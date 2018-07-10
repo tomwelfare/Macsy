@@ -46,7 +46,6 @@ class Blackboard():
 		settings = (kwargs.get('query', self._build_query(**kwargs)), 
 			kwargs.pop('max', 0), 
 			[(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
-		print('Searching the data for: {}'.format(settings[0]))
 		result = self._get_result(settings)
 		return BlackboardCursor(result)
 
@@ -81,7 +80,6 @@ class Blackboard():
 				key, value = qw[k][1]((query, d, qw[k][0]))
 				query[key] = value
 
-		print(query)
 		return query
 
 	def __build_date_query(self, qdv):
@@ -91,6 +89,9 @@ class Blackboard():
 
 	def __build_tag_query(self, qtv):
 		full_tag = self.get_tag(tag_name=qtv[1]) if type(qtv[1]) is str else self.get_tag(tag_id=qtv[1])
+		if full_tag is None:
+			raise ValueError('Tag does not exist: {}'.format(qtv[1]))
+
 		field = 'FOR' if ('Ctrl' in full_tag and full_tag['Ctrl']) else 'Tg'
 		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
 		q = qtv[0].get(field, {qtv[2] : [int(full_tag['_id'])]})
