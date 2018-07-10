@@ -41,7 +41,6 @@ def client_constructor(*args, **kwargs):
 	return client
 
 def test_bb_get_tag(bb):
-
 	# Bad input
 	tag = bb.get_tag(55)
 	assert tag == None, 'bb.get_tag(tag_id=fake_id) failed: {}'.format(tag)
@@ -55,7 +54,6 @@ def test_bb_get_tag(bb):
 	assert boolean == False, 'bb.is_control_tag(tag_id=id) returned the wrong value: {}'.format(boolean)
 	boolean = bb.is_control_tag('3')
 	assert boolean == False, 'bb.is_control_tag(tag_id=id) returned the wrong value: {}'.format(boolean)	
-
 
 	# Retrieval
 	tag = bb.get_tag(tag_ids[0])
