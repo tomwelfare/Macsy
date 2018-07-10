@@ -9,7 +9,6 @@ class DateBasedBlackboard(Blackboard):
 
 	def __init__(self, settings):
 		super().__init__((settings[0], settings[1].upper(), settings[2]))
-		self._max_year, self._min_year = 0, 99999
 		self._populate_document_collections()
 
 	def count(self, **kwargs):
@@ -24,7 +23,6 @@ class DateBasedBlackboard(Blackboard):
 
 	def _populate_document_collections(self):
 		colls = ((coll.split('_')[-1], coll) for coll in self._db.collection_names() if self._name in coll)
-
 		try:
 			colls = {int(year): self._db[coll] for year, coll in colls if year.isdigit()}
 		except IndexError:

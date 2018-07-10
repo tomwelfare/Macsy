@@ -22,6 +22,14 @@ class BlackboardAPI():
 			self.__client = MongoClient(self._parse_connection_string(settings))
 			self.__db = self.__client[self.__dbname]
 
+	def blackboard_exists(self, blackboard_name):
+		if self._valid_blackboard_name(blackboard_name):
+			collection = self.__db[blackboard_name + Blackboard.counter_suffix]
+			result = collection.find_one({Blackboard.counter_id : Blackboard.counter_type})
+			if result:
+				return True
+		return False
+
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
 			settings = (self.__db, blackboard_name, self.__admin_mode)
@@ -34,8 +42,19 @@ class BlackboardAPI():
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
 				return False
 			else:
-				# TODO: Deal with the case of dropping every year from a date-based blackboard
-				return self.__db.drop_collection(blackboard_name)
+				blackboard_type = self.get_blackboard_type(blackboard_name)
+				if blackboard_type == Blackboard.counter_type_standard:
+					for suffix in ['', Blackboard.counter_suffix, Blackboard.tag_suffix]:
+						self.__db.drop_collection(blackboard_name + suffix)
+				elif blackboard_type == Blackboard.counter_type_date_based:
+					for coll in self.__db.collection_names():
+						suffix = coll.split('_')[-1]
+						if blackboard_name == coll.split('_')[0] and (suffix.isdigit() or suffix == Blackboard.counter_suffix or Blackboard.tag_suffix):
+							self.__db.drop_collection(coll)
+				else:
+					return False
+				return True
+
 
 	def get_blackboard_type(self, blackboard_name, date_based=None):
 		collection = self.__db[blackboard_name + Blackboard.counter_suffix]

@@ -10,38 +10,43 @@ from bson.objectid import ObjectId
 import random
 import unittest
 
-class TestDateBasedBlackboardRetrieval(unittest.TestCase):
+class TestBlackboards(unittest.TestCase):
 
 	def client_constructor(*args, **kwargs):
 		client = mongomock.MongoClient(*args, **kwargs)
 		db = client['testdb']
 
-		TestDateBasedBlackboardRetrieval.generate_article_blackboard(db)
-		TestDateBasedBlackboardRetrieval.generate_feed_blackboard(db)
+		TestBlackboards.generate_date_based_blackboard(db,'ARTICLE')
+		TestBlackboards.generate_date_based_blackboard(db,'ARTICLE2')
+		TestBlackboards.generate_standard_blackboard(db,'FEED')
 
 		return client
 
-	def generate_article_blackboard(db):
+	def generate_date_based_blackboard(db, blackboard_name):
+		blackboard_name = blackboard_name.upper()
+
 		# Generate tags collection
-		tags_coll = db['ARTICLE_TAGS']
+		tags_coll = db[blackboard_name + Blackboard.tag_suffix]
 		tag_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 		tgs = [{'_id': x, 'Nm': 'Tag_{}'.format(x), 'Ctrl': 0} for x in tag_ids]
 		tgs.extend([{'_id': 11, 'Nm': 'FOR>Tag_11', 'Ctrl': 1},{'_id': 12, 'Nm': 'POST>Tag_12', 'Ctrl': 1}])	
 		tags_coll.insert(tgs)
 
 		# Generate counter collection
-		counter_coll = db['ARTICLE_COUNTER']
+		counter_coll = db[blackboard_name + Blackboard.counter_suffix]
 		counter_coll.insert({"_id" : Blackboard.counter_type, Blackboard.counter_type : Blackboard.counter_type_date_based})
 
 		# Generate article collection
-		document_colls = {year: db['ARTICLE_{}'.format(year)] for year in range(2008,2018)}
+		document_colls = {year: db['{}_{}'.format(blackboard_name, year)] for year in range(2008,2018)}
 		for tid, (year, coll) in zip(tag_ids, document_colls.items()):
 			obj_id = ObjectId.from_datetime(datetime(year, 1, 1))
 			coll.insert({'_id': obj_id, 'T': 'Title {}'.format(tid), 'Tg' : [tid, tid-1], 'FOR' : [11, 12]})
 
-	def generate_feed_blackboard(db):
+	def generate_standard_blackboard(db, blackboard_name):
+		blackboard_name = blackboard_name.upper()
+
 		# Generate tags collection
-		tags_coll = db['FEED_TAGS']
+		tags_coll = db[blackboard_name + Blackboard.tag_suffix]
 		tag_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
 		tgs = [{'_id': x, 'Nm': 'Tag_{}'.format(x), 'Ctrl': 0} for x in tag_ids[0:5]]
 		tgs.extend([{'_id': x, 'Nm': 'Tag_{}'.format(x), 'DInh': 0} for x in tag_ids[6:10]])
@@ -49,11 +54,11 @@ class TestDateBasedBlackboardRetrieval(unittest.TestCase):
 		tags_coll.insert(tgs)
 
 		# Generate counter collection
-		counter_coll = db['FEED_COUNTER']
+		counter_coll = db[blackboard_name + Blackboard.counter_suffix]
 		counter_coll.insert({"_id" : Blackboard.counter_type, Blackboard.counter_type : Blackboard.counter_type_standard})
 
 		# Generate article collection
-		document_coll = db['FEED']
+		document_coll = db[blackboard_name]
 		for i in range(1, 10):
 			obj_id = ObjectId.from_datetime(datetime(2018, i, 1))
 			document_coll.insert({'_id': obj_id, 'Nm': 'Feed {}'.format(i), 'Tg' : [tag_ids[i]], 'FOR' : [11, 12]})
@@ -64,7 +69,7 @@ class TestDateBasedBlackboardRetrieval(unittest.TestCase):
 		# Settings dont need to be changed when mocking
 		self.settings = {'user' : 'test_user', 'password' : 'password', 'dbname' : 'testdb', 
 			'dburl' : 'mongodb://localhost:27017'}
-		self.api = BlackboardAPI(self.settings, MongoClient=TestDateBasedBlackboardRetrieval.client_constructor)
+		self.api = BlackboardAPI(self.settings, MongoClient=TestBlackboards.client_constructor)
 		self.bb = self.api.load_blackboard('ARTICLE')
 
 	def tearDown(self):
@@ -76,6 +81,23 @@ class TestDateBasedBlackboardRetrieval(unittest.TestCase):
 		with self.assertRaises(ValueError): self.api.drop_blackboard('article_counter')
 		with self.assertRaises(PermissionError): self.api.drop_blackboard('ARTICLE')
 		with self.assertRaises(PermissionError): self.api.drop_blackboard('article')
+
+		self.assertEqual(self.api.blackboard_exists('ARTICLE'), True)
+		self.assertEqual(self.api.blackboard_exists('ARTICLE2'), True)
+		self.assertEqual(self.api.blackboard_exists('FEED'), True)
+		self.assertEqual(self.api.blackboard_exists('article'), False)
+
+		# Test admin drop
+		settings = {'user' : 'dbadmin', 'password' : 'password', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017'}
+		self.api = BlackboardAPI(settings, MongoClient=TestBlackboards.client_constructor)
+		
+		self.api.drop_blackboard('ARTICLE')
+		self.assertEqual(self.api.blackboard_exists('ARTICLE'), False)
+		self.assertEqual(self.api.blackboard_exists('ARTICLE2'), True)
+		self.api.drop_blackboard('ARTICLE2')
+		self.assertEqual(self.api.blackboard_exists('ARTICLE2'), False)
+		self.api.drop_blackboard('FEED')
+		self.assertEqual(self.api.blackboard_exists('FEED'), False)
 
 	def test_api_load_blackboard(self):
 		# Correctly called returns correct type
@@ -150,5 +172,5 @@ class TestDateBasedBlackboardRetrieval(unittest.TestCase):
 		self.assertEqual(str(self.bb.get_latest_date()), '2017-01-01 00:00:00+00:00')
 
 if __name__ == '__main__':
-    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestDateBasedBlackboardRetrieval)
+    suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBlackboards)
     unittest.TextTestRunner().run(suite)
