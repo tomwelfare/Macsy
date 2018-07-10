@@ -106,9 +106,59 @@ def test_bb_get_date(bb):
 # Need to be careful with this when using state changing methods if we do end up
 # testing without mock.
 api = BlackboardAPI(settings, MongoClient=client_constructor)
+<<<<<<< HEAD
 bb = api.load_blackboard('ARTICLE') # date-based
 
 test_bb_get_tag(bb)
 test_bb_count(bb)
 test_bb_find(bb)
 test_bb_get_date(bb)
+=======
+bb = api.load_blackboard('ARTICLE', date_based=True) # date-based
+
+count = bb.count()
+assert count == 4, 'Date-based blackboard had incorrect count: {}'.format(count)
+
+# Test bb.get_tag()
+tag = bb.get_tag(tag_ids[0])
+assert tag == {'Ctrl': 0, '_id': 15, 'Nm': 'Tag_15'}, 'bb.get_tag(id) found the wrong tag: {}'.format(tag)
+tag = bb.get_tag(tag_id=19)
+assert tag == {'Ctrl': 0, '_id': 19, 'Nm': 'Tag_19'}, 'bb.get_tag(tag_id=id) found the wrong tag: {}'.format(tag)
+tag = bb.get_tag(tag_name='Tag_3')
+assert tag == {'Ctrl': 0, '_id': 3, 'Nm': 'Tag_3'}, 'bb.get_tag(tag_name=name) found the wrong tag: {}'.format(tag)
+tag = bb.get_tag(tag_id=22)
+assert tag == {'Ctrl': 1, 'Nm': 'POST>Tag_22', '_id': 22}, 'bb.get_tag(tag_id=id) failed for a control tag: {}'.format(tag)
+boolean = bb.is_control_tag(tag_id=22)
+assert boolean == True, 'bb.is_control_tag(tag_id=id) returned the wrong value: {}'.format(boolean)
+boolean = bb.is_control_tag(tag_id=15)
+assert boolean == False, 'bb.is_control_tag(tag_id=id) returned the wrong value: {}'.format(boolean)
+
+##TODO: Test bb.find()
+docs = [x for x in bb.find(tags = [3])]
+assert len(docs) == 1,	'bb.find(tags=tags) found the wrong documents: {}'.format(docs)
+
+docs = [x for x in bb.find(tags = ['FOR>Tag_21', 22])]
+assert len(docs) == 4,	'bb.find(tags=mixed_tags) found the wrong documents: {}'.format(docs)
+
+docs = [x for x in bb.find(min_date='01-01-2016', tags = ['FOR>Tag_21', 22])]
+assert len(docs) == 2,	'bb.find(min_date=date, tags=mixed_tags) found the wrong documents: {}'.format(docs)
+
+docs = [x for x in bb.find(max_date='02-01-2016', tags = ['FOR>Tag_21', 22])]
+assert len(docs) == 3,	'bb.find(max_date=date, tags=mixed_tags) found the wrong documents: {}'.format(docs)
+
+docs = [x for x in bb.find(tags = ['FOR>Tag_21', 15])]
+assert len(docs) == 1,	'bb.find(tags=mixed_ctrl_tags) found the wrong documents: {}'.format(docs)
+
+docs = [x for x in bb.find(max_date='21-01-2015', tags = ['POST>Tag_22', 3], fields=['T','Tg'], without_fields=['D'])]
+assert len(docs) == 2,	'bb.find(max_date=date, tags=mixed_ctrl_tags, fields=fields, without_fields = without_fields) found the wrong documents: {}'.format(docs)
+
+#docs = [x for x in bb.find(min_date='01-01-2014', max_date='01-01-2018', max_docs = 1)]
+#assert len(docs) == 1, 'bb.find(min_date=date, max_date=date, max_docs=1) found the wrong document: {}'.format(docs)
+
+docs = [x for x in bb.find(query={'T' : 'Title 3'})] 
+assert len(docs) == 1, 'bb.find(query=query) found the wrong document: {}'.format(doc)
+
+# Test bb.get_date()
+date = bb.get_date(docs[0])
+assert str(date) == '2015-01-01 00:00:00+00:00', 'bb.get_date(doc) found the wrong date: {}'.format(date)
+>>>>>>> 6dd68cdfcc82e04178d9afded06400c7043e0f6d
