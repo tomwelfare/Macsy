@@ -21,10 +21,10 @@ class BlackboardAPI():
 
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
-			if self.get_blackboard_type(blackboard_name, date_based=date_based) == Blackboard.counter_type_date_based:
-				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
-			else:
-				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
+			return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode) \
+			if self.get_blackboard_type(blackboard_name, date_based=date_based)\
+			== Blackboard.counter_type_date_based \
+			else Blackboard(self.__db, blackboard_name, self.__admin_mode)
 
 	def drop_blackboard(self, blackboard_name):
 		''' Drop a blackboard from the database, use with caution!'''
@@ -37,8 +37,8 @@ class BlackboardAPI():
 				return self.__db.drop_collection(blackboard_name)
 
 	def get_blackboard_type(self, blackboard_name, blackboard_type = Blackboard.counter_type_standard, date_based=None):
-		if date_based:
-			blackboard_type = Blackboard.counter_type_date_based
+		if date_based is not None:
+			return Blackboard.counter_type_date_based if date_based else Blackboard.counter_type_standard
 
 		collection = self.__db[blackboard_name + '_COUNTER']
 		result = collection.find_one({'_id' : Blackboard.counter_type})
@@ -78,9 +78,7 @@ class BlackboardAPI():
 		dbpass = urllib.parse.quote_plus(settings['password'])
 		dbname = settings['dbname']
 		dburl = settings['dburl'].replace('mongodb://','').strip('/')
-		read_pref = '?readPreference=secondary'
-		if read_primaries is True:
-			read_pref = ''
+		read_pref = '?readPreference=secondary' if read_primaries is False else ''
 		return 'mongodb://%s:%s@%s/%s%s' % (dbuser, dbpass, dburl, dbname, read_pref)
 
 

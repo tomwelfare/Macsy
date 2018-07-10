@@ -56,16 +56,9 @@ class Blackboard():
 			return self._tag_collection.find_one({Blackboard.tag_name : tag_name})
 
 	def is_control_tag(self, tag_id = None, tag_name = None):
-		if tag_id is not None:
-			tag = self.get_tag(tag_id = tag_id)
-		elif tag_name is not None:
-			tag = self.get_tag(tag_name = tag_name)
-
-		if tag:
-			return bool(tag['Ctrl'])
-		else: 
-			return False
-
+		tag = self.get_tag(tag_id = tag_id) if tag_id is not None else self.get_tag(tag_name = tag_name)
+		return bool(tag['Ctrl']) if tag is not None else False
+		
 	def get_date(self, doc):
 		return doc[Blackboard.doc_id].generation_time
 
@@ -80,7 +73,7 @@ class Blackboard():
 			'min_date' : ('$gte', self.__build_date_query, None), 
 			'max_date' : ('$lt', self.__build_date_query, None)}
 		query = {}
-		for k in set(qw).intersection(kwargs):
+		for k in set(kwargs).intersection(qw):
 			for d in kwargs.get(k,qw[k][2]):
 				assert type(kwargs.get(k,qw[k][2])) is list, \
 				'Argument needs to be a list: {}'.format(kwargs.get(k, qw[k][2]))
@@ -99,20 +92,13 @@ class Blackboard():
 		return field, q
 
 	def __build_tag_query(self, query, tag, value):
-		if type(tag) is str:
-			full_tag = self.get_tag(tag_name=tag)
-		else:
-			full_tag = self.get_tag(tag_id=tag)
+		full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
+		field = 'FOR' if ('Ctrl' in full_tag and full_tag['Ctrl']) else 'Tg'
+		if field in query and '$exists' in query[field]: del query[field]
 
-		field = 'Tg'
-		if 'Ctrl' in full_tag and full_tag['Ctrl']:
-			field = 'FOR'			
-
-		q = query.get(field, {value : []})
-		if value in q:
+		q = query.get(field, {value : [int(full_tag['_id'])]})
+		if int(full_tag['_id']) not in q[value]:
 			q[value].append(int(full_tag['_id']))
-		else:
-			q[value] = [int(full_tag['_id'])]
 
 		return field, q
 
