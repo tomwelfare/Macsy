@@ -1,4 +1,5 @@
 import pymongo
+from macsy.blackboard_cursor import BlackboardCursor
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
 
@@ -38,61 +39,15 @@ class Blackboard():
 		self._counter_collection = self._db[blackboard_name + '_COUNTER']
 
 	def count(self, **kwargs):
-		query = self._build_query(**kwargs)
-		return self._document_collection.count(query)
+		query = kwargs.get('query', self._build_query(**kwargs))
+		return self._document_collection.find(query).count()
 
 	def find(self, **kwargs):
 		max_docs = kwargs.pop('max', 0)
 		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
-		if 'query' not in kwargs:
-			query = self._build_query(**kwargs)
-		else:
-			query = kwargs.pop('query')
-		return self._document_collection.find(query).limit(max_docs).sort(sort)
-
-	def _build_query(self, **kwargs):
-		query = {}
-		if 'tags' in kwargs:
-			[self.__build_tag_query(query, tag, "$all") for tag in kwargs.pop('tags', {})]
-		elif 'without_tags' in kwargs:
-			[self.__build_tag_query(query, tag, "$nin") for tag in kwargs.pop('without_tags', {})]
-		if 'fields' in kwargs:
-			[self.__build_field_query(query, field, True) for field in kwargs.pop('fields', {})]
-		if 'without_fields' in kwargs:
-			[self.__build_field_query(query, field, False) for field in kwargs.pop('without_fields', {})]
-		if 'min_date' in kwargs:
-			self.__build_date_query(query, kwargs.pop('min_date', None), '$gte')
-		if 'max_date' in kwargs:
-			self.__build_date_query(query, kwargs.pop('max_date', None), '$lt')
-		return query
-
-	def __build_date_query(self, query, date, value):
-		if date:
-			dt_obj = dtparser.parse(str(date))
-			obj_id = ObjectId.from_datetime(dt_obj)
-			q = query.get('_id', {})
-			q[value] = obj_id
-			query['_id'] = q			
-		return query
-
-	def __build_tag_query(self, query, tag, value):
-		if type(tag) is str:
-			full_tag = self.get_tag(tag_name=tag)
-		else:
-			full_tag = self.get_tag(tag_id=tag)
-
-		field = 'Tg'
-		if 'Ctrl' in full_tag and full_tag['Ctrl']:
-			field = 'FOR'			
-
-		q = query.get(field, {value : []})
-		q[value].append(int(full_tag['_id']))
-		query[field] = q
-		return query
-
-	def __build_field_query(self, query, field, value):
-		query[field] = {"$exists" : value}
-		return query
+		query = kwargs.get('query', self._build_query(**kwargs))
+		result = self._get_result(query, max_docs, sort)
+		return BlackboardCursor(result)
 
 	def get_tag(self, tag_id = None, tag_name = None):
 		if tag_id is not None:
@@ -106,4 +61,62 @@ class Blackboard():
 		elif tag_name is not None:
 			tag = self.get_tag(tag_name = tag_name)
 
-		return bool(tag['Ctrl'])
+		if tag:
+			return bool(tag['Ctrl'])
+		else: 
+			return False
+
+	def get_date(self, doc):
+		return doc[Blackboard.doc_id].generation_time
+
+	def _get_result(self, query, max_docs, sort):
+		return self._document_collection.find(query).limit(max_docs).sort(sort)
+
+	def _build_query(self, **kwargs):
+		qw = {'tags' : ('$all', self.__build_tag_query, {}), 
+			'without_tags' : ('$nin', self.__build_tag_query, {}), 
+			'fields' : (True, self.__build_field_query, {}), 
+			'without_fields' : (False, self.__build_field_query, {}), 
+			'min_date' : ('$gte', self.__build_date_query, None), 
+			'max_date' : ('$lt', self.__build_date_query, None)}
+
+		query = {}
+		for k in set(qw).intersection(kwargs):
+			for d in kwargs.get(k,qw[k][2]):
+				assert type(kwargs.get(k,qw[k][2])) is list, \
+				'Argument needs to be a list: {}'.format(kwargs.get(k, qw[k][2]))
+				key, value = qw[k][1](query, d, qw[k][0])
+				query[key] = value
+
+		return query
+
+	def __build_date_query(self, query, date, value):
+		field = Blackboard.doc_id
+		dt_obj = dtparser.parse(str(date))
+		obj_id = ObjectId.from_datetime(dt_obj)
+		q = query.get(field, {})
+		q[value] = obj_id
+		return field, q
+
+	def __build_tag_query(self, query, tag, value):
+		if type(tag) is str:
+			full_tag = self.get_tag(tag_name=tag)
+		else:
+			full_tag = self.get_tag(tag_id=tag)
+
+		field = 'Tg'
+		if 'Ctrl' in full_tag and full_tag['Ctrl']:
+			field = 'FOR'			
+
+		q = query.get(field, {value : []})
+		if value in q:
+			q[value].append(int(full_tag['_id']))
+		else:
+			q[value] = [int(full_tag['_id'])]
+
+		return field, q
+
+	def __build_field_query(self, query, field, value):
+		q = query.get(field, {})
+		q['$exists'] = value
+		return field, q

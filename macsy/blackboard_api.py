@@ -22,10 +22,8 @@ class BlackboardAPI():
 	def load_blackboard(self, blackboard_name, date_based=None):
 		if self._valid_blackboard_name(blackboard_name):
 			if self.get_blackboard_type(blackboard_name, date_based=date_based) == Blackboard.counter_type_date_based:
-				print("Loading date-based Blackboard")
 				return DateBasedBlackboard(self.__db, blackboard_name, self.__admin_mode)
 			else:
-				print("Loading standard Blackboard")
 				return Blackboard(self.__db, blackboard_name, self.__admin_mode)
 
 	def drop_blackboard(self, blackboard_name):

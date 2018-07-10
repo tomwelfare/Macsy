@@ -17,6 +17,16 @@ class DateBasedBlackboard(Blackboard):
 		self._min_year = 99999
 		self._populate_document_collections()
 
+	def count(self, **kwargs):
+		query = kwargs.get('query', self._build_query(**kwargs))
+		return sum(coll.find(query).count() for coll in self._document_collections.values())
+
+	def get_earliest_date(self):
+		return self._get_extremal_date(self._min_year, pymongo.ASCENDING)
+
+	def get_latest_date(self):
+		return self._get_extremal_date(self._max_year, pymongo.DESCENDING)
+
 	def _populate_document_collections(self):
 		colls = ((coll.split('_')[-1], coll) for coll in self._db.collection_names() if self._name in coll)
 
@@ -30,29 +40,10 @@ class DateBasedBlackboard(Blackboard):
 		self._max_year = max(colls.keys())
 		self._min_year = min(colls.keys())
 
-	def count(self, **kwargs):
-		# query = self._build_query(**kwargs)
-		return sum(coll.count() for coll in self._document_collections.values())
-
-	def find(self, **kwargs):
-		max_docs = kwargs.pop('max', 0)
-		sort = [(Blackboard.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
-		if 'query' not in kwargs:
-			query = self._build_query(**kwargs)
-		else:
-			query = kwargs.pop('query')
-		results = [self._document_collections[year].find(query).limit(max_docs).sort(sort) for year in range(self._min_year, self._max_year+1)]
-		return BlackboardCursor(results, max_docs)
-
-	def get_earliest_date(self):
-		return self._get_extremal_date(self._min_year, pymongo.ASCENDING)
-
-	def get_latest_date(self):
-		return self._get_extremal_date(self._max_year, pymongo.DESCENDING)
+	def _get_result(self, query, max_docs, sort):
+		return [self._document_collections[year].find(query).limit(max_docs).sort(sort) for year in range(self._min_year, self._max_year+1)]
 
 	def _get_extremal_date(self, year, order):
 		doc = self._document_collections[year].find().sort({Blackboard.doc_id : order}).limit(1)
 		return self.get_date(doc)
 
-	def get_date(self, doc):
-		return doc[Blackboard.doc_id].generation_time

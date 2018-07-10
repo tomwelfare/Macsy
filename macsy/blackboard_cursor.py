@@ -10,7 +10,6 @@ class BlackboardCursor:
 		self.__cursors = [x for x in cursors if x.count() > 0]
 		self.__current = 0
 		self.__index = 0
-		self.__max = max_docs # TODO
 
 	def __iter__(self):
 		return self
