@@ -28,8 +28,7 @@ class DateBasedBlackboard(Blackboard):
 		try:
 			colls = {int(year): self._db[coll] for year, coll in colls if year.isdigit()}
 		except IndexError:
-			print('Blackboard is not date-based. Exiting...')
-			sys.exit(0)
+			raise ValueError('Blackboard is not date-based.')
 
 		self._document_collections = colls
 		self._max_year = max(colls.keys())

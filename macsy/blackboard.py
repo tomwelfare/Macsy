@@ -21,6 +21,7 @@ class Blackboard():
 	tag_control_post = 'POST>'
 
 	counter_suffix = '_COUNTER'
+	counter_id = '_id'
 	counter_next = 'NEXT_ID'
 	counter_type = 'BLACKBOARD_TYPE'
 	counter_type_standard = 'STANDARD'
