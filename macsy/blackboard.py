@@ -79,7 +79,6 @@ class Blackboard():
 			'without_fields' : (False, self.__build_field_query, {}), 
 			'min_date' : ('$gte', self.__build_date_query, None), 
 			'max_date' : ('$lt', self.__build_date_query, None)}
-
 		query = {}
 		for k in set(qw).intersection(kwargs):
 			for d in kwargs.get(k,qw[k][2]):
@@ -88,6 +87,7 @@ class Blackboard():
 				key, value = qw[k][1](query, d, qw[k][0])
 				query[key] = value
 
+		print(query)
 		return query
 
 	def __build_date_query(self, query, date, value):
