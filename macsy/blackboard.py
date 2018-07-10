@@ -88,10 +88,7 @@ class Blackboard():
 		return Blackboard.doc_id, q
 
 	def __build_tag_query(self, qtv):
-		full_tag = self.get_tag(tag_name=qtv[1]) if type(qtv[1]) is str else self.get_tag(tag_id=qtv[1])
-		if full_tag is None:
-			raise ValueError('Tag does not exist: {}'.format(qtv[1]))
-
+		full_tag = self.__get_canonical_tag(qtv[1])
 		field = 'FOR' if ('Ctrl' in full_tag and full_tag['Ctrl']) else 'Tg'
 		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
 		q = qtv[0].get(field, {qtv[2] : [int(full_tag['_id'])]})
@@ -102,3 +99,10 @@ class Blackboard():
 
 	def __build_field_query(self, qfv):
 		return qfv[1], qfv[0].get(qfv[1], {'$exists' : qfv[2]})
+
+	def __get_canonical_tag(self, tag):
+		full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
+		if full_tag is None:
+			raise ValueError('Tag does not exist: {}'.format(tag))
+
+		return full_tag
