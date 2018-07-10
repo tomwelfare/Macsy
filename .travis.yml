@@ -17,6 +17,7 @@ before_script:
 
 script:
   - pylint --errors-only macsy
+  - python -m coverage xml
   - python -m unittest discover
   
 after_script:
