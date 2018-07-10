@@ -4,6 +4,7 @@ import mongomock
 import pymongo
 import itertools
 from datetime import datetime
+from dateutil import parser as dtparser
 from bson.objectid import ObjectId
 import random
 
@@ -92,9 +93,8 @@ def test_bb_find(bb):
 	assert doc['T'] == 'Title 3', 'bb.find(query=query) found the wrong document: {}'.format(doc)
 
 def test_bb_get_date(bb):
-	doc = [x for x in bb.find(query={'T' : 'Title 3'})][0]
-	date = bb.get_date(doc)
-	assert str(date) == '2008-01-01 00:00:00+00:00', 'bb.get_date(doc) found the wrong date: {}'.format(date)
+	date = bb.get_date({'_id': ObjectId.from_datetime(dtparser.parse('21-10-2017'))})
+	assert str(date) == '2017-10-21 00:00:00+00:00', 'bb.get_date(doc) found the wrong date: {}'.format(date)
 
 
 # If we dont supply a mock MongoDB constructor, it will actually open a connection.
