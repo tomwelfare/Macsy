@@ -1,11 +1,24 @@
 language: python
 python:
   - "3.6"
+
+env:
+  global:
+    - CC_TEST_REPORTER_ID=643267060387d1c4278b4a3e679eab57707fed464990b7ddfcec90615e45fa4d
     
 install:
   - pip install pylint
   - pip install -r requirements.txt
+  
+before_script:
+  - curl -L https://codeclimate.com/downloads/test-reporter/test-reporter-latest-linux-amd64 > ./cc-test-reporter
+  - chmod +x ./cc-test-reporter
+  - ./cc-test-reporter before-build
 
 script:
   - pylint --errors-only macsy
+  - python -m coverage xml
   - python -m unittest discover
+  
+after_script:
+  - ./cc-test-reporter after-build --coverage-input-type coverage.py --exit-code $TRAVIS_TEST_RESULT
