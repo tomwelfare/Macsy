@@ -7,16 +7,10 @@ __all__ = ['Blackboard']
 
 class Blackboard():
 
-	#Error codes
-	error_doc_not_found = None
-	error_doc_exists = -1
-	error_tag_not_found = 0
-	error_tag_exists = -1
-
 	# Predefined tags and fields
 	doc_id = '_id'
 	doc_tags = 'Tg'
-	doc_for_tags = 'FOR'
+	doc_control_tags = 'FOR'
 
 	tag_suffix = '_TAGS'
 	tag_id = '_id'
@@ -56,8 +50,10 @@ class Blackboard():
 			return self._tag_collection.find_one({Blackboard.tag_name : tag_name})
 
 	def is_control_tag(self, tag_id = None, tag_name = None):
-		tag = self.get_tag(tag_id = tag_id) if tag_id is not None else self.get_tag(tag_name = tag_name)
-		return bool(tag['Ctrl']) if tag is not None else False
+		return self.__tag_has_property(Blackboard.tag_control, tag_id, tag_name)
+
+	def is_inheritable_tag(self, tag_id = None, tag_name = None):
+		return self.__tag_has_property(Blackboard.tag_inherit, tag_id, tag_name)
 		
 	def get_date(self, doc):
 		return doc[Blackboard.doc_id].generation_time
@@ -89,11 +85,11 @@ class Blackboard():
 
 	def __build_tag_query(self, qtv):
 		full_tag = self.__get_canonical_tag(qtv[1])
-		field = 'FOR' if ('Ctrl' in full_tag and full_tag['Ctrl']) else 'Tg'
+		field = Blackboard.doc_control_tags if (Blackboard.tag_control in full_tag and full_tag[Blackboard.tag_control]) else Blackboard.doc_tags
 		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
-		q = qtv[0].get(field, {qtv[2] : [int(full_tag['_id'])]})
-		if int(full_tag['_id']) not in q[qtv[2]]:
-			q[qtv[2]].append(int(full_tag['_id']))
+		q = qtv[0].get(field, {qtv[2] : [int(full_tag[Blackboard.tag_id])]})
+		if int(full_tag[Blackboard.tag_id]) not in q[qtv[2]]:
+			q[qtv[2]].append(int(full_tag[Blackboard.tag_id]))
 
 		return field, q
 
@@ -101,8 +97,14 @@ class Blackboard():
 		return qfv[1], qfv[0].get(qfv[1], {'$exists' : qfv[2]})
 
 	def __get_canonical_tag(self, tag):
+		# codeclimate doesn't like this block -> too complex
 		full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
 		if full_tag is None:
 			raise ValueError('Tag does not exist: {}'.format(tag))
 
 		return full_tag
+
+	def __tag_has_property(self, tag_property, tag_id = None, tag_name = None):
+		tag = self.get_tag(tag_id = tag_id) if tag_id is not None else self.get_tag(tag_name = tag_name)
+		test = tag[tag_property] if (tag is not None and tag_property in tag) else False
+		return bool(test)

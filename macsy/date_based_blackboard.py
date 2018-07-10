@@ -36,9 +36,8 @@ class DateBasedBlackboard(Blackboard):
 		self._min_year = min(colls.keys())
 
 	def _get_result(self, qms):
-		result = [self._document_collections[year].find(qms[0]).limit(qms[1]).sort(qms[2]) for year in range(self._min_year, self._max_year+1)]
-		return result
+		return [self._document_collections[year].find(qms[0]).limit(qms[1]).sort(qms[2]) for year in range(self._min_year, self._max_year+1)]
 
 	def _get_extremal_date(self, year, order):
-		return self.get_date(self._document_collections[year].find().sort({Blackboard.doc_id : order}).limit(1))
+		return self.get_date(self._document_collections[year].find().sort(Blackboard.doc_id, order).limit(1)[0])
 

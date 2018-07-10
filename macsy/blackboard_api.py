@@ -38,10 +38,10 @@ class BlackboardAPI():
 	def get_blackboard_type(self, blackboard_name, date_based=None):
 		if date_based is not None:
 			return Blackboard.counter_type_date_based if date_based else Blackboard.counter_type_standard
-
-		collection = self.__db[blackboard_name + '_COUNTER']
-		result = collection.find_one({'_id' : Blackboard.counter_type})
-		return result.get(Blackboard.counter_type) if result is not None else None
+		else:
+			collection = self.__db[blackboard_name + '_COUNTER']
+			result = collection.find_one({'_id' : Blackboard.counter_type})
+			return result.get(Blackboard.counter_type) if result is not None else None
 		
 	def _valid_settings(self, settings):
 		'''
