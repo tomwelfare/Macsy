@@ -117,6 +117,5 @@ class Blackboard():
 		return field, q
 
 	def __build_field_query(self, query, field, value):
-		q = query.get(field, {})
-		q['$exists'] = value
+		q = query.get(field, {'$exists' : value})
 		return field, q
