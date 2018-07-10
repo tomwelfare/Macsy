@@ -38,14 +38,13 @@ class BlackboardAPI():
 	def drop_blackboard(self, blackboard_name):
 		''' Drop a blackboard from the database, use with caution!'''
 		if self._valid_blackboard_name(blackboard_name):
-			if blackboard_name.upper() in BlackboardAPI.__protected_names and not self.__admin_mode:
+			protected = blackboard_name.upper() in BlackboardAPI.__protected_names
+			if protected and not self.__admin_mode:
 				raise PermissionError('Protected blackboards cannot be dropped without admin privileges.')
 			else:
-				blackboard_type = self.get_blackboard_type(blackboard_name)
-				if blackboard_type == Blackboard.counter_type_standard:
-					self.__drop_standard_blackboard(blackboard_name)
-				elif blackboard_type == Blackboard.counter_type_date_based:
-					self.__drop_date_based_blackboard(blackboard_name)
+				drop_method = {Blackboard.counter_type_standard : self.__drop_standard_blackboard,
+					Blackboard.counter_type_date_based : self.__drop_date_based_blackboard}
+				drop_method[self.get_blackboard_type(blackboard_name)](blackboard_name)
 
 	def get_blackboard_type(self, blackboard_name, date_based=None):
 		collection = self.__db[blackboard_name + Blackboard.counter_suffix]
@@ -53,9 +52,9 @@ class BlackboardAPI():
 		if result is not None:
 			self.__check_blackboard_type_errors((blackboard_name, result.get(Blackboard.counter_type), date_based))
 			return result.get(Blackboard.counter_type)
-		else:
-			return Blackboard.counter_type_date_based if date_based is True else Blackboard.counter_type_standard
+		return Blackboard.counter_type_date_based if date_based else Blackboard.counter_type_standard
 		
+	# Should implement as a decorator?
 	def _valid_settings(self, settings):
 		'''
 		Validate the settings input by the user, checking if the right fields 
@@ -66,6 +65,7 @@ class BlackboardAPI():
 			raise ValueError('Incorrect or incomplete database settings supplied.')
 		return True
 
+	# Should implement as a decorator?
 	def _valid_blackboard_name(self, blackboard_name):
 		'''
 		Valid the blackboard_name input by the user, checking if it contains 
@@ -73,8 +73,7 @@ class BlackboardAPI():
 		'''
 		if any(x in blackboard_name for x in r" \$_"):
 			raise ValueError('Forbidden characters in blackboard name ("$","_"," ")')
-			return False
-		return True
+		return blackboard_name
 
 	def _parse_connection_string(self, settings):
 		''' 
@@ -103,7 +102,7 @@ class BlackboardAPI():
 				self.__db.drop_collection(coll)
 
 	def __check_blackboard_type_errors(self, ntd):
-		if ntd[2] is True and ntd[1] == Blackboard.counter_type_standard:
-			raise ValueError('{} is a standard blackboard, not date-based.'.format(ntd[0]))
-		if ntd[2] is False and ntd[1] == Blackboard.counter_type_date_based:
-			raise ValueError('{} is a date-based blackboard, not standard.'.format(ntd[0]))
+		standard = ntd[1] == Blackboard.counter_type_standard
+		atype = Blackboard.counter_type_standard if standard else Blackboard.counter_type_date_based
+		if ntd[2] == standard:
+			raise ValueError('{} is a {} blackboard.'.format(ntd[0], atype))

@@ -76,7 +76,6 @@ class Blackboard():
 				'Argument needs to be a list: {}'.format(kwargs.get(k, qw[k][2]))
 				key, value = qw[k][1]((query, d, qw[k][0]))
 				query[key] = value
-
 		return query
 
 	def __build_date_query(self, qdv):
@@ -86,23 +85,21 @@ class Blackboard():
 
 	def __build_tag_query(self, qtv):
 		full_tag = self.__get_canonical_tag(qtv[1])
-		field = Blackboard.doc_control_tags if (Blackboard.tag_control in full_tag and full_tag[Blackboard.tag_control]) else Blackboard.doc_tags
+		is_ctrl_tag = Blackboard.tag_control in full_tag and full_tag[Blackboard.tag_control]
+		field = Blackboard.doc_control_tags if is_ctrl_tag else Blackboard.doc_tags
 		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
 		q = qtv[0].get(field, {qtv[2] : [int(full_tag[Blackboard.tag_id])]})
 		if int(full_tag[Blackboard.tag_id]) not in q[qtv[2]]:
 			q[qtv[2]].append(int(full_tag[Blackboard.tag_id]))
-
 		return field, q
 
 	def __build_field_query(self, qfv):
 		return qfv[1], qfv[0].get(qfv[1], {'$exists' : qfv[2]})
 
 	def __get_canonical_tag(self, tag):
-		# codeclimate doesn't like this block -> too complex
 		full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
 		if full_tag is None:
 			raise ValueError('Tag does not exist: {}'.format(tag))
-
 		return full_tag
 
 	def __tag_has_property(self, tag_property, tag_id = None, tag_name = None):
