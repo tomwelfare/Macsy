@@ -1,9 +1,8 @@
 import pymongo
-from macsy.blackboard_cursor import BlackboardCursor
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-
-__all__ = ['Blackboard']
+from macsy.blackboards import blackboard_cursor
+BlackboardCursor = blackboard_cursor.BlackboardCursor
 
 class Blackboard():
 

@@ -2,9 +2,6 @@ import pymongo
 import mongomock
 import sys
 
-
-__all__ = ['BlackboardCursor']
-
 class BlackboardCursor:
 
 	def __init__(self, cursors, max_docs=0):

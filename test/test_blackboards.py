@@ -1,6 +1,4 @@
-from macsy.blackboard_api import BlackboardAPI
-from macsy.blackboard import Blackboard
-from macsy.date_based_blackboard import DateBasedBlackboard
+from macsy.blackboards import blackboard_api, blackboard, date_based_blackboard
 import mongomock 
 import pymongo
 import itertools
@@ -9,6 +7,10 @@ from dateutil import parser as dtparser
 from bson.objectid import ObjectId
 import random
 import unittest
+
+BlackboardAPI = blackboard_api.BlackboardAPI
+Blackboard = blackboard.Blackboard
+DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
 
 class TestBlackboards(unittest.TestCase):
 

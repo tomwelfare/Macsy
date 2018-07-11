@@ -1,9 +1,7 @@
-from macsy.blackboard import Blackboard
-from macsy.blackboard_cursor import BlackboardCursor
 import pymongo
 import sys
-
-__all__ = ['DateBasedBlackboard']
+from macsy.blackboards import blackboard
+Blackboard = blackboard.Blackboard
 
 class DateBasedBlackboard(Blackboard):
 
