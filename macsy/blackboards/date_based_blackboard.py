@@ -2,7 +2,6 @@ import pymongo
 import sys
 from bson.objectid import ObjectId
 from macsy.blackboards import blackboard
-from macsy.blackboards.blackboard import check_admin
 Blackboard = blackboard.Blackboard
 
 class DateBasedBlackboard(Blackboard):
@@ -21,7 +20,7 @@ class DateBasedBlackboard(Blackboard):
     def update(self, doc_id, doc):
         raise NotImplementedError()
 
-    @check_admin('Admin rights required to delete documents.')
+    @blackboard.check_admin('Admin rights required to delete documents.')
     def delete(self, doc_id):
         year = self._get_doc_year({Blackboard.doc_id : doc_id})
         return self._document_collections[year].remove({Blackboard.doc_id : doc_id})

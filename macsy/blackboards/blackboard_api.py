@@ -21,14 +21,22 @@ def validate_settings(fn):
         return fn(*args, **kwargs)
     return wrap
 
+def check_admin(error):
+    def dec(fn):
+        def wrap(*args, **kwargs):
+            self = args[0]
+            if not self._admin_mode:
+                raise PermissionError(error)
+            return fn(*args, **kwargs)
+        return wrap
+    return dec
+
 class BlackboardAPI():
 
     _setting_fields = {'username' : 'user', 'password' : 'password', 'dbname' : 'dbname', 'dburl' : 'dburl'}
     _protected_names = ['ARTICLE','FEED', 'OUTLET', 'TWEET', 'URL', 'MODULE', 'MODULE_RUN', 'Newspapers', 'AmericanNews']
     _admin_user = 'dbadmin'
-    _salt = ')Djmsn)p'
-
-    
+    _salt = ')Djmsn)p'  
 
     @validate_settings
     def __init__(self, settings, MongoClient=MongoClient):

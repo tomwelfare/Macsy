@@ -5,14 +5,14 @@ from macsy.blackboards import blackboard_cursor
 BlackboardCursor = blackboard_cursor.BlackboardCursor
 
 def check_admin(error):
-        def dec(fn):
-            def wrap(*args, **kwargs):
-                self = args[0]
-                if not self._admin_mode:
-                    raise PermissionError(error)
-                return fn(*args, **kwargs)
-            return wrap
-        return dec
+    def dec(fn):
+        def wrap(*args, **kwargs):
+            self = args[0]
+            if not self._admin_mode:
+                raise PermissionError(error)
+            return fn(*args, **kwargs)
+        return wrap
+    return dec
 
 class Blackboard():
 
