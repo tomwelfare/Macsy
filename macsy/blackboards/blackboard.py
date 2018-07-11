@@ -1,6 +1,6 @@
 import pymongo
-from dateutil import parser as dtparser
 from bson.objectid import ObjectId
+from dateutil import parser as dtparser
 from macsy.blackboards import blackboard_cursor
 BlackboardCursor = blackboard_cursor.BlackboardCursor
 
@@ -32,6 +32,16 @@ class Blackboard():
 		self._tag_collection = self._db[self._name + Blackboard.tag_suffix]
 		self._counter_collection = self._db[self._name + Blackboard.counter_suffix]
 
+	def _check_admin(error):
+		def dec(fn):
+			def wrap(*args, **kwargs):
+				self = args[0]
+				if not self._admin_mode:
+					raise PermissionError(error)
+				return fn(*args, **kwargs)
+			return wrap
+		return dec
+
 	def count(self, **kwargs):
 		query = kwargs.get('query', self._build_query(**kwargs))
 		return self._document_collection.find(query).count()
@@ -43,6 +53,34 @@ class Blackboard():
 		result = self._get_result(settings)
 		return BlackboardCursor(result)
 
+	# TODO: Later on, need to add bulk insert/update/delete methods
+	def insert(self, doc):
+		raise NotImplementedError()
+
+	def update(self, doc_id, doc):
+		raise NotImplementedError()
+
+	@_check_admin('Admin rights required to delete documents.')
+	def delete(self, doc_id):
+		return self._document_collection.remove({Blackboard.doc_id : doc_id})
+
+	def insert_tag(self, tag_id, tag_name, control = False, inheritable = False):
+		raise NotImplementedError()
+
+	def update_tag(self, tag_id, tag_name, control = None, inheritable = None):
+		raise NotImplementedError()
+
+	@_check_admin('Admin rights required to delete tags.')
+	def delete_tag(self, tag_id):
+		self._remove_tag_from_all(tag_id)
+		return self._tag_collection.remove({Blackboard.tag_id : tag_id})
+
+	def add_tag(self, doc_id, tag_id):
+		return self._add_remove_tag((doc_id, tag_id), '$addToSet')
+	
+	def remove_tag(self, doc_id, tag_id):
+		return self._add_remove_tag((doc_id, tag_id), '$pull')
+
 	def get_tag(self, tag_id = None, tag_name = None):
 		if tag_id is not None:
 			return self._tag_collection.find_one({Blackboard.tag_id : tag_id})
@@ -50,24 +88,22 @@ class Blackboard():
 			return self._tag_collection.find_one({Blackboard.tag_name : tag_name})
 
 	def is_control_tag(self, tag_id = None, tag_name = None):
-		return self.__tag_has_property(Blackboard.tag_control, tag_id, tag_name)
+		return self._tag_has_property(Blackboard.tag_control, tag_id, tag_name)
 
 	def is_inheritable_tag(self, tag_id = None, tag_name = None):
-		return self.__tag_has_property(Blackboard.tag_inherit, tag_id, tag_name)
-		
-	def get_date(self, doc):
-		return doc[Blackboard.doc_id].generation_time
+		return self._tag_has_property(Blackboard.tag_inherit, tag_id, tag_name)
 
 	def _get_result(self, qms):
-		return self._document_collection.find(qms[0]).limit(qms[1]).sort(qms[2])
+		query, max_docs, sort = qms
+		return self._document_collection.find(query).limit(max_docs).sort(sort)
 
 	def _build_query(self, **kwargs):
-		qw = {'tags' : ('$all', self.__build_tag_query, {}), 
-			'without_tags' : ('$nin', self.__build_tag_query, {}), 
-			'fields' : (True, self.__build_field_query, {}), 
-			'without_fields' : (False, self.__build_field_query, {}), 
-			'min_date' : ('$gte', self.__build_date_query, None), 
-			'max_date' : ('$lt', self.__build_date_query, None)}
+		qw = {'tags' : ('$all', self._build_tag_query, {}), 
+			'without_tags' : ('$nin', self._build_tag_query, {}), 
+			'fields' : (True, self._build_field_query, {}), 
+			'without_fields' : (False, self._build_field_query, {}), 
+			'min_date' : ('$gte', self._build_date_query, None), 
+			'max_date' : ('$lt', self._build_date_query, None)}
 		query = {}
 		for k in set(kwargs).intersection(qw):
 			for d in kwargs.get(k,qw[k][2]):
@@ -78,31 +114,45 @@ class Blackboard():
 
 		return query
 
-	def __build_date_query(self, qdv):
-		q = qdv[0].get(Blackboard.doc_id, {})
-		q[qdv[2]] = ObjectId.from_datetime(dtparser.parse(str(qdv[1])))
+	def _build_date_query(self, qdv):
+		query, date, value = qdv
+		q = query.get(Blackboard.doc_id, {})
+		q[value] = ObjectId.from_datetime(dtparser.parse(str(date)))
 		return Blackboard.doc_id, q
 
-	def __build_tag_query(self, qtv):
-		full_tag = self.__get_canonical_tag(qtv[1])
+	def _build_tag_query(self, qtv):
+		query, tag, value = qtv
+		full_tag = self._get_canonical_tag(tag)
 		field = Blackboard.doc_control_tags if (Blackboard.tag_control in full_tag and full_tag[Blackboard.tag_control]) else Blackboard.doc_tags
-		if field in qtv[0] and '$exists' in qtv[0][field]: del qtv[0][field]
-		q = qtv[0].get(field, {qtv[2] : [int(full_tag[Blackboard.tag_id])]})
-		if int(full_tag[Blackboard.tag_id]) not in q[qtv[2]]:
-			q[qtv[2]].append(int(full_tag[Blackboard.tag_id]))
+		if field in query and '$exists' in query[field]: del query[field]
+		q = query.get(field, {value : [int(full_tag[Blackboard.tag_id])]})
+		if int(full_tag[Blackboard.tag_id]) not in q[value]:
+			q[value].append(int(full_tag[Blackboard.tag_id]))
 		return field, q
 
-	def __build_field_query(self, qfv):
-		return qfv[1], qfv[0].get(qfv[1], {'$exists' : qfv[2]})
+	def _build_field_query(self, qfv):
+		query, field, value = qfv
+		return field, query.get(field, {'$exists' : value})
 
-	def __get_canonical_tag(self, tag):
+	def _get_canonical_tag(self, tag):
 		full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
 		if full_tag is None:
 			raise ValueError('Tag does not exist: {}'.format(tag))
-
 		return full_tag
 
-	def __tag_has_property(self, tag_property, tag_id = None, tag_name = None):
+	def _tag_has_property(self, tag_property, tag_id = None, tag_name = None):
 		tag = self.get_tag(tag_id = tag_id) if tag_id is not None else self.get_tag(tag_name = tag_name)
 		test = tag[tag_property] if (tag is not None and tag_property in tag) else False
 		return bool(test)
+
+	def _add_remove_tag(self, ids, operation):
+		doc_id, tag_id = ids
+		self._validate_tag(tag_id)
+		field = Blackboard.doc_control_tags if self.is_control_tag(tag_id) else Blackboard.doc_tags
+		return self._document_collection.update({Blackboard.doc_id : doc_id}, {operation, {field:  tag_id}})
+
+	@_check_admin('Admin rights required to remove a tag from all documents.')
+	def _remove_tag_from_all(self, tag_id):
+		print('Removing tag {} from {} documents.'.format(tag_id, self.count(tags=[tag_id])))
+		for doc in self.find(tags=[tag_id]):
+			self.remove_tag(doc[Blackboard.doc_id], tag_id)

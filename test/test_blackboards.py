@@ -14,7 +14,7 @@ DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
 
 class TestBlackboards(unittest.TestCase):
 
-	def client_constructor(*args, **kwargs):
+	def mock_client(*args, **kwargs):
 		client = mongomock.MongoClient(*args, **kwargs)
 		db = client['testdb']
 
@@ -38,7 +38,7 @@ class TestBlackboards(unittest.TestCase):
 		counter_coll = db[blackboard_name + Blackboard.counter_suffix]
 		counter_coll.insert({"_id" : Blackboard.counter_type, Blackboard.counter_type : Blackboard.counter_type_date_based})
 
-		# Generate article collection
+		# Generate date_based collections
 		document_colls = {year: db['{}_{}'.format(blackboard_name, year)] for year in range(2008,2018)}
 		for tid, (year, coll) in zip(tag_ids, document_colls.items()):
 			obj_id = ObjectId.from_datetime(datetime(year, 1, 1))
@@ -59,11 +59,10 @@ class TestBlackboards(unittest.TestCase):
 		counter_coll = db[blackboard_name + Blackboard.counter_suffix]
 		counter_coll.insert({"_id" : Blackboard.counter_type, Blackboard.counter_type : Blackboard.counter_type_standard})
 
-		# Generate article collection
+		# Generate standard collection
 		document_coll = db[blackboard_name]
 		for i in range(1, 10):
-			obj_id = ObjectId.from_datetime(datetime(2018, i, 1))
-			document_coll.insert({'_id': obj_id, 'Nm': 'Feed {}'.format(i), 'Tg' : [tag_ids[i]], 'FOR' : [11, 12]})
+			document_coll.insert({'_id': i, 'Nm': 'Feed {}'.format(i), 'Tg' : [tag_ids[i]], 'FOR' : [11, 12]})
 
 
 	def setUp(self):
@@ -71,7 +70,7 @@ class TestBlackboards(unittest.TestCase):
 		# Settings dont need to be changed when mocking
 		self.settings = {'user' : 'test_user', 'password' : 'password', 'dbname' : 'testdb', 
 			'dburl' : 'mongodb://localhost:27017'}
-		self.api = BlackboardAPI(self.settings, MongoClient=TestBlackboards.client_constructor)
+		self.api = BlackboardAPI(self.settings, MongoClient=TestBlackboards.mock_client)
 		self.bb = self.api.load_blackboard('ARTICLE')
 
 	def tearDown(self):
@@ -91,7 +90,7 @@ class TestBlackboards(unittest.TestCase):
 
 		# Test admin drop
 		settings = {'user' : 'dbadmin', 'password' : 'password', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017'}
-		self.api = BlackboardAPI(settings, MongoClient=TestBlackboards.client_constructor)
+		self.api = BlackboardAPI(settings, MongoClient=TestBlackboards.mock_client)
 		
 		self.api.drop_blackboard('ARTICLE')
 		self.assertEqual(self.api.blackboard_exists('ARTICLE'), False)
@@ -100,6 +99,12 @@ class TestBlackboards(unittest.TestCase):
 		self.assertEqual(self.api.blackboard_exists('ARTICLE2'), False)
 		self.api.drop_blackboard('FEED')
 		self.assertEqual(self.api.blackboard_exists('FEED'), False)
+
+		# Test settings validation
+		settings = {'user' : 'dbadmin', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017'}
+		with self.assertRaises(ValueError): self.api = BlackboardAPI(settings, MongoClient=TestBlackboards.mock_client)
+		settings = {'user' : 'dbadmin', 'dog' : 'dog', 'dbname' : 'testdb', 'dburl' : 'mongodb://localhost:27017'}
+		with self.assertRaises(ValueError): self.api = BlackboardAPI(settings, MongoClient=TestBlackboards.mock_client)
 
 	def test_api_load_blackboard(self):
 		# Correctly called returns correct type
@@ -168,6 +173,9 @@ class TestBlackboards(unittest.TestCase):
 		
 	def test_bb_get_date(self):
 		self.assertEqual(str(self.bb.get_date({'_id': ObjectId.from_datetime(dtparser.parse('21-10-2017'))})), '2017-10-21 00:00:00+00:00')
+		with self.assertRaises(ValueError): self.bb.get_date({'different_id': ObjectId.from_datetime(dtparser.parse('21-10-2017'))})
+		with self.assertRaises(ValueError): self.bb.get_date({'_id': 1})
+
 
 	def test_get_extremal_date(self):
 		self.assertEqual(str(self.bb.get_earliest_date()), '2008-01-01 00:00:00+00:00')
