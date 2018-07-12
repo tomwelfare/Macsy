@@ -25,6 +25,6 @@ class CounterManager(base_manager.BaseManager):
         return result[CounterManager.counter_tag]
 
     def _increment_next_tag_id(self, tag_id):
-        next_id = {CounterManager.counter_id : CounterManager.counter_next, "$set" : {CounterManager.counter_tag : int(tag_id+1)}}
-        self._collection.insert(next_id)
+        next_id = {"$set" : {CounterManager.counter_tag : int(tag_id+1)}}
+        self._collection.update({CounterManager.counter_id : CounterManager.counter_next}, next_id)
         

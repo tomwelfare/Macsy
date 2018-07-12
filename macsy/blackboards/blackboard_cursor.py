@@ -18,3 +18,6 @@ class BlackboardCursor:
                 self.__index = 0
                 self.__current += 1
         raise StopIteration()
+
+    def __len__(self):
+        return sum([x.count() for x in self.__cursors])

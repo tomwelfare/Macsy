@@ -1,4 +1,5 @@
 import pymongo
+from datetime import datetime
 from bson import ObjectId
 from macsy.blackboards.managers import document_manager
 
@@ -11,23 +12,33 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
     def _populate_collections(self):
         colls = ((coll.split('_')[-1], coll) for coll in self._parent._db.collection_names() if self._parent._name in coll)
         try:
-            colls = {int(year): self._parent._db[coll] for year, coll in colls if year.isdigit()}
+            self._collections = {int(year): self._parent._db[coll] for year, coll in colls if year.isdigit()}
+            self._max_year = max(self._collections.keys())
+            self._min_year = min(self._collections.keys())    
         except IndexError:
             raise ValueError('Blackboard is not date-based.')
-
-        self._collections = colls
-        self._max_year = max(colls.keys())
-        self._min_year = min(colls.keys())
 
     def count(self, **kwargs):
         query = kwargs.get('query', self._build_query(**kwargs))
         return sum(coll.find(query).count() for coll in self._collections.values())
 
     def insert(self, doc):
-        raise NotImplementedError()
+        if DateBasedDocumentManager.doc_id not in doc:
+            doc[DateBasedDocumentManager.doc_id] = ObjectId.from_datetime(datetime.now())
+        year = self._get_doc_year(doc)
+        if self._doc_exists(doc):
+            doc_id = doc[DateBasedDocumentManager.doc_id]
+            del doc[DateBasedDocumentManager.doc_id]
+            self.update(doc_id, doc)
+        return self._collections[year].insert(doc)
 
-    def update(self, doc_id, doc):
-        raise NotImplementedError()
+    def update(self, doc_id, updated_fields):
+        year = self._get_doc_year({DateBasedDocumentManager.doc_id : doc_id})
+        keys = [key for key, value in updated_fields.items() if type(value) is list]
+        add_to_set = {key : {'$each': updated_fields.pop(key)} for key in keys}
+        if len(add_to_set):
+            return self._collections[year].update({DateBasedDocumentManager.doc_id : doc_id}, {"$set" : updated_fields, "$push" : add_to_set})    
+        return self._collections[year].update({DateBasedDocumentManager.doc_id : doc_id}, {"$set" : updated_fields})
 
     def delete(self, doc_id):
         year = self._get_doc_year({DateBasedDocumentManager.doc_id : doc_id})

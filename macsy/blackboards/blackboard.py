@@ -39,27 +39,33 @@ class Blackboard():
     def delete(self, doc_id):
         return self._document_manager.delete(doc_id)
 
-    def insert_tag(self, tag_name, control=False, inheritable=False):
-        return self._tag_manager.insert_tag(tag_name, control, inheritable)
-
-    def update_tag(self, tag_id, tag_name, control=None, inheritable=None):
-        return self._tag_manager.update_tag(tag_id, tag_name, control, inheritable)
-
-    @check_admin('Admin rights required to delete tags.')
-    def delete_tag(self, tag_id):
-        return self._tag_manager.delete_tag(tag_id)
-
     def add_tag(self, doc_id, tag_id):
         return self._document_manager.add_tag(doc_id, tag_id)
 
     def remove_tag(self, doc_id, tag_id):
         return self._document_manager.remove_tag(doc_id, tag_id)
 
-    def get_tag(self, tag_id=None, tag_name=None):
-        return self._tag_manager.get_tag(tag_id, tag_name)
+    def insert_tag(self, tag_name, inheritable=False):
+        if self._tag_manager.tag_exists(tag_name):
+            raise ValueError('Tag already exists')
+        return self._tag_manager.insert_tag(tag_name, inheritable)
 
-    def is_control_tag(self, tag_id=None, tag_name=None):
-        return self._tag_manager.is_control_tag(tag_id, tag_name)
+    def update_tag(self, tag_id, tag_name, inheritable=None):
+        return self._tag_manager.update_tag(tag_id, tag_name, inheritable)
 
-    def is_inheritable_tag(self, tag_id=None, tag_name=None):
-        return self._tag_manager.is_inheritable_tag(tag_id, tag_name)
+    @check_admin('Admin rights required to delete tags.')
+    def delete_tag(self, tag_id):
+        return self._tag_manager.delete_tag(tag_id)
+
+    # Repeated code should go into a decorator that checks the type, and defines the keyword based on that
+    def get_tag(self, tag):
+        return self._tag_manager.get_tag(tag_name=tag) if type(tag) is str else \
+            self._tag_manager.get_tag(tag_id=tag)
+
+    def is_control_tag(self, tag):
+        return self._tag_manager.is_control_tag(tag_name=tag) if type(tag) is str else \
+            self._tag_manager.is_control_tag(tag_id=tag)
+
+    def is_inheritable_tag(self, tag):
+        return self._tag_manager.is_inheritable_tag(tag_name=tag) if type(tag) is str else \
+            self._tag_manager.is_inheritable_tag(tag_id=tag)

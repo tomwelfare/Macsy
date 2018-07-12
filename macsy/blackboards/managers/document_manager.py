@@ -1,5 +1,6 @@
 import pymongo
 from bson.objectid import ObjectId
+from datetime import datetime
 from dateutil import parser as dtparser
 from macsy.blackboards.managers import base_manager, tag_manager
 TagManager = tag_manager.TagManager
@@ -24,19 +25,33 @@ class DocumentManager(base_manager.BaseManager):
         return self._collection.find(query).count()
 
     def insert(self, doc):
-        raise NotImplementedError()
+        if DocumentManager.doc_id not in doc:
+            doc[DocumentManager.doc_id] = ObjectId.from_datetime(datetime.now())
+        if self._doc_exists(doc):
+            doc_id = doc[DocumentManager.doc_id]
+            del doc[DocumentManager.doc_id]
+            self.update(doc_id, doc)
+        return self._collection.insert(doc)
 
     def update(self, doc_id, updated_fields):
-        raise NotImplementedError()
+        keys = [key for key, value in updated_fields.items() if type(value) is list]
+        add_to_set = {key : {'$each': updated_fields.pop(key)} for key in keys}
+        if len(add_to_set):
+            return self._collection.update({DocumentManager.doc_id : doc_id}, {"$set" : updated_fields, "$push" : add_to_set})    
+        return self._collection.update({DocumentManager.doc_id : doc_id}, {"$set" : updated_fields})
 
     def delete(self, doc_id):
-        raise NotImplementedError()
+        return self._collection.remove({DocumentManager.doc_id : doc_id})
 
     def add_tag(self, doc_id, tag_id):
-        return self._add_remove_tag((doc_id, tag_id), '$addToSet')
+        return self._add_remove_tag((doc_id, tag_id), '$push')
     
     def remove_tag(self, doc_id, tag_id):
         return self._add_remove_tag((doc_id, tag_id), '$pull')
+
+    # Should check for hash values, not just on id?
+    def _doc_exists(self, doc):
+        return bool(self.count(query={DocumentManager.doc_id : doc[DocumentManager.doc_id]}))
 
     def _add_remove_tag(self, ids, operation):
         doc_id, tag_id = ids

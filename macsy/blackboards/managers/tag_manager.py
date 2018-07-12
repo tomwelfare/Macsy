@@ -10,47 +10,46 @@ class TagManager(base_manager.BaseManager):
     tag_name = 'Nm'
     tag_control = 'Ctrl'
     tag_inherit = 'DInh'
-    tag_control_for = 'FOR>'
-    tag_control_post = 'POST>'
+    control_tags = ['FOR>', 'POST>']
 
     def __init__(self, parent):
         suffix = TagManager.tag_suffix
         super().__init__(parent, suffix)
-        
-    def insert_tag(self, tag_name, control = False, inheritable = False):
-        if self._tag_exists(tag_name):
-            raise ValueError('Tag already exists')
-        ctrl = 0 if control is not True else 1
-        if TagManager.tag_control_for or TagManager.tag_control_post in tag_name:
-            ctrl = 1
+
+    def insert_tag(self, tag_name, inheritable=False):
+        ctrl = 1 if any(map(tag_name.startswith, TagManager.control_tags)) else 0
         inherit = 0 if inheritable is not True else 1
-        tag = {TagManager.tag_id : self._parent._counter_manager.next_tag_id_and_increment(), 
+        tag = {TagManager.tag_id : self._parent._counter_manager.get_next_tag_id_and_increment(), 
             TagManager.tag_name : tag_name, 
             TagManager.tag_control : ctrl, 
             TagManager.tag_inherit : inherit}
         return self._collection.insert(tag)
 
-    def update_tag(self, tag_id, tag_name, control = None, inheritable = None):
+    def update_tag(self, tag_id, tag_name, inheritable=None):
         raise NotImplementedError()
 
     def delete_tag(self, tag_id):
         self._remove_tag_from_all(tag_id)
         return self._collection.remove({TagManager.tag_id : tag_id})
 
-    def get_tag(self, tag_id = None, tag_name = None):
+    def get_tag(self, tag_id=None, tag_name=None):
         if tag_id is not None:
             return self._collection.find_one({TagManager.tag_id : tag_id})
         if tag_name is not None:
             return self._collection.find_one({TagManager.tag_name : tag_name})
 
-    def is_control_tag(self, tag_id = None, tag_name = None):
+    def is_control_tag(self, tag_id=None, tag_name=None):
         return self._tag_has_property(TagManager.tag_control, tag_id, tag_name)
 
-    def is_inheritable_tag(self, tag_id = None, tag_name = None):
+    def is_inheritable_tag(self, tag_id=None, tag_name=None):
         return self._tag_has_property(TagManager.tag_inherit, tag_id, tag_name)
 
-    def _tag_has_property(self, tag_property, tag_id = None, tag_name = None):
-        tag = self.get_tag(tag_id = tag_id) if tag_id is not None else self.get_tag(tag_name = tag_name)
+    def tag_exists(self, tag_name):
+        exists = self._collection.find_one({TagManager.tag_name : tag_name})
+        return True if exists is not None else False
+
+    def _tag_has_property(self, tag_property, tag_id=None, tag_name=None):
+        tag = self.get_tag(tag_id=tag_id) if tag_id is not None else self.get_tag(tag_name=tag_name)
         test = tag[tag_property] if (tag is not None and tag_property in tag) else False
         return bool(test)
 
@@ -59,9 +58,6 @@ class TagManager(base_manager.BaseManager):
         if full_tag is None:
             raise ValueError('Tag does not exist: {}'.format(tag))
         return full_tag
-
-    def _tag_exists(self, tag_name):
-        raise NotImplementedError()
 
     def _remove_tag_from_all(self, tag_id):
         print('Removing tag {} from {} documents.'.format(tag_id, self._parent.count(tags=[tag_id])))
