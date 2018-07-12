@@ -1,16 +1,21 @@
-from macsy.blackboards import blackboard_api, blackboard, date_based_blackboard
+import random
+import unittest
 import mongomock 
 import pymongo
 import itertools
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-import random
-import unittest
+from macsy.blackboards import blackboard_api, blackboard, date_based_blackboard
+from macsy.managers import tag_manager, document_manager, counter_manager
+
 
 BlackboardAPI = blackboard_api.BlackboardAPI
 Blackboard = blackboard.Blackboard
 DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
+TagManager = tag_manager.TagManager
+DocumentManager = document_manager.DocumentManager
+CounterManager = counter_manager.CounterManager
 
 class TestBlackboards(unittest.TestCase):
 
@@ -28,15 +33,16 @@ class TestBlackboards(unittest.TestCase):
         blackboard_name = blackboard_name.upper()
 
         # Generate tags collection
-        tags_coll = db[blackboard_name + Blackboard.tag_suffix]
+        tags_coll = db[blackboard_name + TagManager.tag_suffix]
         tag_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         tgs = [{'_id': x, 'Nm': 'Tag_{}'.format(x), 'Ctrl': 0} for x in tag_ids]
         tgs.extend([{'_id': 11, 'Nm': 'FOR>Tag_11', 'Ctrl': 1},{'_id': 12, 'Nm': 'POST>Tag_12', 'Ctrl': 1}])    
         tags_coll.insert(tgs)
 
         # Generate counter collection
-        counter_coll = db[blackboard_name + Blackboard.counter_suffix]
-        counter_coll.insert({"_id" : Blackboard.counter_type, Blackboard.counter_type : Blackboard.counter_type_date_based})
+        counter_coll = db[blackboard_name + CounterManager.counter_suffix]
+        counter_coll.insert({"_id" : CounterManager.counter_type, CounterManager.counter_type : CounterManager.counter_type_date_based})
+        counter_coll.insert({"_id" : CounterManager.counter_next, CounterManager.counter_tag : tags_coll.count() + 1})
 
         # Generate date_based collections
         document_colls = {year: db['{}_{}'.format(blackboard_name, year)] for year in range(2008,2018)}
@@ -48,7 +54,7 @@ class TestBlackboards(unittest.TestCase):
         blackboard_name = blackboard_name.upper()
 
         # Generate tags collection
-        tags_coll = db[blackboard_name + Blackboard.tag_suffix]
+        tags_coll = db[blackboard_name + TagManager.tag_suffix]
         tag_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
         tgs = [{'_id': x, 'Nm': 'Tag_{}'.format(x), 'Ctrl': 0} for x in tag_ids[0:5]]
         tgs.extend([{'_id': x, 'Nm': 'Tag_{}'.format(x), 'DInh': 0} for x in tag_ids[6:10]])
@@ -56,8 +62,8 @@ class TestBlackboards(unittest.TestCase):
         tags_coll.insert(tgs)
 
         # Generate counter collection
-        counter_coll = db[blackboard_name + Blackboard.counter_suffix]
-        counter_coll.insert({"_id" : Blackboard.counter_type, Blackboard.counter_type : Blackboard.counter_type_standard})
+        counter_coll = db[blackboard_name + CounterManager.counter_suffix]
+        counter_coll.insert({"_id" : CounterManager.counter_type, CounterManager.counter_type : CounterManager.counter_type_standard})
 
         # Generate standard collection
         document_coll = db[blackboard_name]
@@ -172,14 +178,54 @@ class TestBlackboards(unittest.TestCase):
         with self.assertRaises(ValueError): self.bb.find(tags = ['Tag_4', 13])
         
     def test_bb_get_date(self):
-        self.assertEqual(str(self.bb.get_date({'_id': ObjectId.from_datetime(dtparser.parse('21-10-2017'))})), '2017-10-21 00:00:00+00:00')
+        self.assertEqual(str(self.bb.get_date({DocumentManager.doc_id: ObjectId.from_datetime(dtparser.parse('21-10-2017'))})), '2017-10-21 00:00:00+00:00')
         with self.assertRaises(ValueError): self.bb.get_date({'different_id': ObjectId.from_datetime(dtparser.parse('21-10-2017'))})
-        with self.assertRaises(ValueError): self.bb.get_date({'_id': 1})
-
+        with self.assertRaises(ValueError): self.bb.get_date({DocumentManager.doc_id: 1})
 
     def test_get_extremal_date(self):
         self.assertEqual(str(self.bb.get_earliest_date()), '2008-01-01 00:00:00+00:00')
         self.assertEqual(str(self.bb.get_latest_date()), '2017-01-01 00:00:00+00:00')
+
+    def test_insert(self):
+        with self.assertRaises(NotImplementedError): self.bb.insert({DocumentManager.doc_id : ObjectId.from_datetime(dtparser.parse('21-10-2017'))})
+
+    def test_update(self):
+        with self.assertRaises(NotImplementedError): self.bb.update(ObjectId.from_datetime(dtparser.parse('21-10-2017')), {})
+
+    def test_delete(self):
+        with self.assertRaises(PermissionError): self.bb.delete(ObjectId.from_datetime(dtparser.parse('21-10-2017')))
+        # Add test as admin
+
+    def test_insert_tag(self):
+        # ValueErrors
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag('Tag_Neg')
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag('Tag_0')
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag('Tag_1')
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag('FOR>Tag_15', False)
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag('POST>Tag_16', False)
+
+        # Success
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag(13, 'Tag_13')
+        with self.assertRaises(NotImplementedError): self.bb.insert_tag(14, 'FOR>Tag_14', True)
+        
+    def test_update_tag(self):
+        with self.assertRaises(NotImplementedError): self.bb.update_tag(1, {TagManager.tag_control : 1})
+
+    def test_delete_tag(self):
+        with self.assertRaises(PermissionError): self.bb.delete_tag(1)
+        # Add test as admin
+
+    def test_add_tag(self):
+        # Need to complete
+        doc = [x for x in self.bb.find(query={'T' : 'Title 3'})][0]
+        result = self.bb.add_tag(doc[DocumentManager.doc_id], 1)
+        self.assertEqual(result['err'], None)
+
+    def test_remove_tag(self):
+        # Need to complete
+        doc = [x for x in self.bb.find(query={'T' : 'Title 3'})][0]
+        result = self.bb.remove_tag(doc[DocumentManager.doc_id], 3)
+        self.assertEqual(result['err'], None)
 
 if __name__ == '__main__':
     suite = unittest.defaultTestLoader.loadTestsFromTestCase(TestBlackboards)

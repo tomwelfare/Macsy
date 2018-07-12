@@ -1,4 +1,5 @@
-__all__ = ['blackboards', 'modules', 'utils']
+"""The Macsy Package"""
+__all__ = ['blackboards', 'managers']
 # Don't modify the line above, or this line!
 import automodinit
 automodinit.automodinit(__name__, __file__, globals())

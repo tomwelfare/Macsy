@@ -1,10 +1,6 @@
-import pymongo
-import mongomock
-import sys
-
 class BlackboardCursor:
 
-    def __init__(self, cursors, max_docs=0):
+    def __init__(self, cursors):
         self.__cursors = [x for x in cursors if x.count() > 0]
         self.__current = 0
         self.__index = 0
