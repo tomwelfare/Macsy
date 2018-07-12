@@ -2,9 +2,10 @@ import inspect
 
 class BaseManager():
 
-    def __init__(self, parent):
+    def __init__(self, parent, suffix):
         self.checkCaller()
         self._parent = parent
+        self._collection = self._parent._db[self._parent._name + suffix]
 
     def checkCaller(self):
         from macsy.blackboards import blackboard, date_based_blackboard

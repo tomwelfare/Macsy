@@ -11,8 +11,7 @@ class DocumentManager(base_manager.BaseManager):
     doc_control_tags = 'FOR'
 
     def __init__(self, parent):
-        super().__init__(parent)
-        self._document_collection = self._parent._db[self._parent._name]
+        super().__init__(parent, '')
         
     def find(self, **kwargs):
         settings = (kwargs.get('query', self._build_query(**kwargs)), 
@@ -22,7 +21,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def count(self, **kwargs):
         query = kwargs.get('query', self._build_query(**kwargs))
-        return self._document_collection.find(query).count()
+        return self._collection.find(query).count()
 
     def insert(self, doc):
         raise NotImplementedError()
@@ -46,7 +45,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def _get_result(self, qms):
         query, max_docs, sort = qms
-        return self._document_collection.find(query).limit(max_docs).sort(sort)
+        return self._collection.find(query).limit(max_docs).sort(sort)
 
     def _build_query(self, **kwargs):
         qw = {'tags' : ('$all', self._build_tag_query, {}), 

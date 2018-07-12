@@ -6,22 +6,22 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def __init__(self, parent):
         super().__init__(parent)
-        self._populate_document_collections()
+        self._populate_collections()
 
-    def _populate_document_collections(self):
+    def _populate_collections(self):
         colls = ((coll.split('_')[-1], coll) for coll in self._parent._db.collection_names() if self._parent._name in coll)
         try:
             colls = {int(year): self._parent._db[coll] for year, coll in colls if year.isdigit()}
         except IndexError:
             raise ValueError('Blackboard is not date-based.')
 
-        self._document_collections = colls
+        self._collections = colls
         self._max_year = max(colls.keys())
         self._min_year = min(colls.keys())
 
     def count(self, **kwargs):
         query = kwargs.get('query', self._build_query(**kwargs))
-        return sum(coll.find(query).count() for coll in self._document_collections.values())
+        return sum(coll.find(query).count() for coll in self._collections.values())
 
     def insert(self, doc):
         raise NotImplementedError()
@@ -31,7 +31,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def delete(self, doc_id):
         year = self._get_doc_year({DateBasedDocumentManager.doc_id : doc_id})
-        return self._document_collections[year].remove({DateBasedDocumentManager.doc_id : doc_id})
+        return self._collections[year].remove({DateBasedDocumentManager.doc_id : doc_id})
 
     def get_date(self, doc):
         if DateBasedDocumentManager.doc_id in doc and type(doc[DateBasedDocumentManager.doc_id]) is ObjectId:
@@ -46,10 +46,10 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def _get_result(self, qms):
         query, max_docs, sort = qms
-        return [self._document_collections[year].find(query).limit(max_docs).sort(sort) for year in range(self._min_year, self._max_year+1)]
+        return [self._collections[year].find(query).limit(max_docs).sort(sort) for year in range(self._min_year, self._max_year+1)]
 
     def _get_extremal_date(self, year, order):
-        return self.get_date(self._document_collections[year].find().sort(DateBasedDocumentManager.doc_id, order).limit(1)[0])
+        return self.get_date(self._collections[year].find().sort(DateBasedDocumentManager.doc_id, order).limit(1)[0])
 
     def _get_doc_year(self, doc):
         return self.get_date(doc).year
@@ -59,4 +59,4 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         doc = {DateBasedDocumentManager.doc_id : doc_id}
         year = self._get_doc_year(doc)
         field = DateBasedDocumentManager.doc_control_tags if self._parent._tag_manager.is_control_tag(tag_id) else DateBasedDocumentManager.doc_tags
-        return self._document_collections[year].update(doc, {operation : {field:  tag_id}})
+        return self._collections[year].update(doc, {operation : {field:  tag_id}})
