@@ -10,6 +10,7 @@ def check_admin(error):
         def wrap(*args, **kwargs):
             if not args[0].admin_mode:
                 raise PermissionError(error)
+                # Untested??
             return func(*args, **kwargs)
         return wrap
     return dec
@@ -57,15 +58,11 @@ class Blackboard():
     def delete_tag(self, tag_id):
         return self._tag_manager.delete_tag(tag_id)
 
-    # Repeated code should go into a decorator that checks the type, and defines the keyword based on that
     def get_tag(self, tag):
-        return self._tag_manager.get_tag(tag_name=tag) if type(tag) is str else \
-            self._tag_manager.get_tag(tag_id=tag)
+        return self._tag_manager._check_tag_type(tag, self._tag_manager.get_tag)
 
     def is_control_tag(self, tag):
-        return self._tag_manager.is_control_tag(tag_name=tag) if type(tag) is str else \
-            self._tag_manager.is_control_tag(tag_id=tag)
+        return self._tag_manager._check_tag_type(tag, self._tag_manager.is_control_tag)
 
     def is_inheritable_tag(self, tag):
-        return self._tag_manager.is_inheritable_tag(tag_name=tag) if type(tag) is str else \
-            self._tag_manager.is_inheritable_tag(tag_id=tag)
+        return self._tag_manager._check_tag_type(tag, self._tag_manager.is_inheritable_tag)

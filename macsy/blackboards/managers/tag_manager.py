@@ -59,6 +59,9 @@ class TagManager(base_manager.BaseManager):
             raise ValueError('Tag does not exist: {}'.format(tag))
         return full_tag
 
+    def _check_tag_type(self, tag, func):
+        return func(tag_name=tag) if type(tag) is str else func(tag_id=tag)
+
     def _remove_tag_from_all(self, tag_id):
         print('Removing tag {} from {} documents.'.format(tag_id, self._parent.count(tags=[tag_id])))
         for doc in self._parent.find(tags=[tag_id]):

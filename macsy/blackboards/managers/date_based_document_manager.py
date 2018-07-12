@@ -14,7 +14,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         try:
             self._collections = {int(year): self._parent._db[coll] for year, coll in colls if year.isdigit()}
             self._max_year = max(self._collections.keys())
-            self._min_year = min(self._collections.keys())    
+            self._min_year = min(self._collections.keys())
         except IndexError:
             raise ValueError('Blackboard is not date-based.')
 
@@ -23,8 +23,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         return sum(coll.find(query).count() for coll in self._collections.values())
 
     def insert(self, doc):
-        if DateBasedDocumentManager.doc_id not in doc:
-            doc[DateBasedDocumentManager.doc_id] = ObjectId.from_datetime(datetime.now())
+        doc[DateBasedDocumentManager.doc_id] = self._generate_id(doc)
         year = self._get_doc_year(doc)
         if self._doc_exists(doc):
             doc_id = doc[DateBasedDocumentManager.doc_id]
@@ -34,8 +33,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def update(self, doc_id, updated_fields):
         year = self._get_doc_year({DateBasedDocumentManager.doc_id : doc_id})
-        keys = [key for key, value in updated_fields.items() if type(value) is list]
-        add_to_set = {key : {'$each': updated_fields.pop(key)} for key in keys}
+        add_to_set = self._append_list_fields(updated_fields)
         if len(add_to_set):
             return self._collections[year].update({DateBasedDocumentManager.doc_id : doc_id}, {"$set" : updated_fields, "$push" : add_to_set})    
         return self._collections[year].update({DateBasedDocumentManager.doc_id : doc_id}, {"$set" : updated_fields})

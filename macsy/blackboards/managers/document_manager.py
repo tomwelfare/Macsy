@@ -25,8 +25,7 @@ class DocumentManager(base_manager.BaseManager):
         return self._collection.find(query).count()
 
     def insert(self, doc):
-        if DocumentManager.doc_id not in doc:
-            doc[DocumentManager.doc_id] = ObjectId.from_datetime(datetime.now())
+        doc[DocumentManager.doc_id] = self._generate_id(doc)
         if self._doc_exists(doc):
             doc_id = doc[DocumentManager.doc_id]
             del doc[DocumentManager.doc_id]
@@ -34,8 +33,7 @@ class DocumentManager(base_manager.BaseManager):
         return self._collection.insert(doc)
 
     def update(self, doc_id, updated_fields):
-        keys = [key for key, value in updated_fields.items() if type(value) is list]
-        add_to_set = {key : {'$each': updated_fields.pop(key)} for key in keys}
+        add_to_set = self._append_list_fields(updated_fields)
         if len(add_to_set):
             return self._collection.update({DocumentManager.doc_id : doc_id}, {"$set" : updated_fields, "$push" : add_to_set})    
         return self._collection.update({DocumentManager.doc_id : doc_id}, {"$set" : updated_fields})
@@ -99,3 +97,12 @@ class DocumentManager(base_manager.BaseManager):
     def _build_field_query(self, qfv):
         query, field, value = qfv
         return field, query.get(field, {'$exists' : value})
+
+    def _append_list_fields(self, updated_fields):
+        keys = [key for key, value in updated_fields.items() if type(value) is list]
+        return {key : {'$each': updated_fields.pop(key)} for key in keys}
+
+    def _generate_id(self, doc):
+        if DocumentManager.doc_id not in doc:
+            return ObjectId.from_datetime(datetime.now())
+        return doc[DocumentManager.doc_id]
