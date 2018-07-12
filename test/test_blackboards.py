@@ -177,7 +177,6 @@ class TestBlackboards(unittest.TestCase):
         self.assertEqual(len(self.bb.find(min_date=['01-01-2016'], tags = ['FOR>Tag_11', 12])), 3)
         self.assertEqual(len([x for x in self.bb.find(max_date=['02-01-2016'], tags = ['FOR>Tag_11', 12])]), 8)
         self.assertEqual(len(self.bb.find(tags = ['FOR>Tag_11', 5])), 2)
-        self.assertEqual(len([x for x in self.bb.find(max_date=['21-01-2015'], min_date=['21-01-2007'], tags = ['POST>Tag_12', 3], fields=['T','Tg'], without_fields=['D'])]), 1)
         self.assertEqual([x for x in self.bb.find(query={'T' : 'Title 3'})][0]['T'], 'Title 3')
 
         with self.assertRaises(ValueError): self.bb.find(tags = [1, 13])
