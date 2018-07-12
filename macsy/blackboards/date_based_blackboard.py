@@ -1,5 +1,5 @@
 from macsy.blackboards import blackboard
-from macsy.managers import date_based_document_manager
+from macsy.blackboards.managers import date_based_document_manager
 Blackboard = blackboard.Blackboard
 DBDocumentManager = date_based_document_manager.DateBasedDocumentManager
 

@@ -1,5 +1,5 @@
 from macsy.blackboards import blackboard_cursor
-from macsy.managers import tag_manager, document_manager, counter_manager
+from macsy.blackboards.managers import tag_manager, document_manager, counter_manager
 BlackboardCursor = blackboard_cursor.BlackboardCursor
 TagManager = tag_manager.TagManager
 DocumentManager = document_manager.DocumentManager

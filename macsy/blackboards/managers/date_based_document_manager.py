@@ -1,6 +1,6 @@
 import pymongo
 from bson import ObjectId
-from macsy.managers import document_manager
+from macsy.blackboards.managers import document_manager
 
 class DateBasedDocumentManager(document_manager.DocumentManager):
 

@@ -7,7 +7,7 @@ from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
 from macsy.blackboards import blackboard_api, blackboard, date_based_blackboard
-from macsy.managers import tag_manager, document_manager, counter_manager
+from macsy.blackboards.managers import tag_manager, document_manager, counter_manager
 
 
 BlackboardAPI = blackboard_api.BlackboardAPI

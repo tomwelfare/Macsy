@@ -1,6 +1,6 @@
 import pymongo
 from bson.objectid import ObjectId
-from macsy.managers import base_manager, counter_manager
+from macsy.blackboards.managers import base_manager, counter_manager
 CounterManager = counter_manager.CounterManager
 
 class TagManager(base_manager.BaseManager):

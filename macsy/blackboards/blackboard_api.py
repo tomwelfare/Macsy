@@ -1,7 +1,7 @@
 import urllib.parse
 from pymongo import MongoClient
 from macsy.blackboards import blackboard, date_based_blackboard
-from macsy.managers import tag_manager, counter_manager
+from macsy.blackboards.managers import tag_manager, counter_manager
 TagManager = tag_manager.TagManager
 CounterManager = counter_manager.CounterManager
 Blackboard = blackboard.Blackboard

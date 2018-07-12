@@ -1,5 +1,5 @@
 import pymongo
-from macsy.managers import base_manager
+from macsy.blackboards.managers import base_manager
 
 class CounterManager(base_manager.BaseManager):
 
