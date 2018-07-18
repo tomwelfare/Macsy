@@ -158,7 +158,7 @@ class TestDateBasedBlackboards(unittest.TestCase):
 
         self.assertEqual(self.bb.count(tags=[2]), 2)
         self.assertEqual(self.bb.delete_tag(2)['n'], 1)
-        self.assertEqual(self.bb.count(tags=[2]), 0)
+        with self.assertRaises(ValueError): self.bb.count(tags=[2])
 
     def test_bb_get_tag(self):
         # Bad input

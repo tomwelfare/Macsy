@@ -17,7 +17,7 @@ before_script:
 
 script:
   - pylint --errors-only macsy
-  - python -m coverage run --source=macsy test/test_blackboards.py
+  - python -m coverage run --source=macsy test/test_all.py
   - python -m unittest discover
   
 after_script:
