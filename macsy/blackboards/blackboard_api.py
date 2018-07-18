@@ -47,6 +47,15 @@ class BlackboardAPI():
         self.__client = MongoClient(self._get_connection_string(settings))
         self.__db = self.__client[self.__dbname]
 
+    def get_blackboard_names(self):
+        suffix_len = len(CounterManager.counter_suffix)
+
+        collections = self.__db.collection_names(include_system_collections=False)
+        blackboards = (coll[0:-suffix_len] for coll in collections if coll.endswith(CounterManager.counter_suffix))
+        blackboards = [blackboard for blackboard in blackboards if self.blackboard_exists(blackboard)]
+
+        return blackboards
+
     @validate_blackboard_name
     def blackboard_exists(self, blackboard_name):
         collection = self.__db[blackboard_name + CounterManager.counter_suffix]
