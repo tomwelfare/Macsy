@@ -9,7 +9,7 @@ home = '/'.join(os.path.abspath(__file__).split('/')[0:-2])
 sys.path.insert(0, home)
 from datetime import datetime
 from dateutil import parser as dtparser
-import mock_data_generator
+from test import mock_data_generator
 from bson.objectid import ObjectId
 from macsy.blackboards import blackboard_api
 from macsy.blackboards.managers import tag_manager, document_manager, counter_manager, date_based_document_manager

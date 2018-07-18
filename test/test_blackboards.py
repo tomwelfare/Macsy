@@ -7,7 +7,7 @@ import pymongo
 import itertools
 home = '/'.join(os.path.abspath(__file__).split('/')[0:-2])
 sys.path.insert(0, home)
-import mock_data_generator
+from test import mock_data_generator
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
