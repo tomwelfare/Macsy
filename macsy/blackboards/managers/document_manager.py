@@ -13,11 +13,15 @@ class DocumentManager(base_manager.BaseManager):
 
     def __init__(self, parent):
         super().__init__(parent, '')
+        self.array_fields = [DocumentManager.doc_tags, DocumentManager.doc_control_tags]
+        self.doc_id = DocumentManager.doc_id
+        self.doc_tags = DocumentManager.doc_tags
+        self.doc_control_tags = DocumentManager.doc_control_tags
         
     def find(self, **kwargs):
         settings = (kwargs.get('query', self._build_query(**kwargs)), 
             kwargs.pop('max', 0), 
-            [(DocumentManager.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
+            [(self.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
         return self._get_result(settings)
 
     def count(self, **kwargs):
@@ -25,36 +29,57 @@ class DocumentManager(base_manager.BaseManager):
         return self._collection.find(query).count()
 
     def insert(self, doc):
-        doc[DocumentManager.doc_id] = self._generate_id(doc)
-        if self._doc_exists(doc):
-            doc_id = doc[DocumentManager.doc_id]
-            del doc[DocumentManager.doc_id]
-            self.update(doc_id, doc)
-        return self._collection.insert(doc)
+        doc[self.doc_id] = self._get_or_generate_id(doc)
+        return self.update(doc[self.doc_id], doc) if self._doc_exists(doc) else self._collection.insert(doc)
 
     def update(self, doc_id, updated_fields):
         add_to_set = self._append_list_fields(updated_fields)
-        if len(add_to_set):
-            return self._collection.update({DocumentManager.doc_id : doc_id}, {"$set" : updated_fields, "$push" : add_to_set})    
-        return self._collection.update({DocumentManager.doc_id : doc_id}, {"$set" : updated_fields})
+        if self.doc_id in updated_fields: del updated_fields[self.doc_id]
+        response =  self._collection.update({self.doc_id : doc_id}, \
+            {"$set" : updated_fields, "$addToSet" : add_to_set}) if len(add_to_set) else \
+            self._collection.update({self.doc_id : doc_id}, {"$set" : updated_fields})
+        if response['updatedExisting']:
+            return doc_id
+        return None
 
     def delete(self, doc_id):
-        return self._collection.remove({DocumentManager.doc_id : doc_id})
+        return self._collection.remove({self.doc_id : doc_id})
 
     def add_tag(self, doc_id, tag_id):
-        return self._add_remove_tag((doc_id, tag_id), '$push')
+        return self._add_remove_tags((doc_id, tag_id), "$addToSet") if type(tag_id) is list else \
+            self._add_remove_tag((doc_id, tag_id), "$addToSet")
     
     def remove_tag(self, doc_id, tag_id):
-        return self._add_remove_tag((doc_id, tag_id), '$pull')
+        return self._add_remove_tags((doc_id, tag_id), "$pullAll") if type(tag_id) is list else \
+            self._add_remove_tag((doc_id, tag_id), "$pull")
 
     # Should check for hash values, not just on id?
     def _doc_exists(self, doc):
-        return bool(self.count(query={DocumentManager.doc_id : doc[DocumentManager.doc_id]}))
+        return bool(self.count(query={self.doc_id : doc[self.doc_id]}))
 
     def _add_remove_tag(self, ids, operation):
         doc_id, tag_id = ids
-        field = DocumentManager.doc_control_tags if self._parent._tag_manager.is_control_tag(tag_id) else DocumentManager.doc_tags
-        return self.update({DocumentManager.doc_id : doc_id}, {operation : {field:  tag_id}})
+        field = self.doc_control_tags if self._parent._tag_manager.is_control_tag(tag_id) else self.doc_tags
+        return self.update({self.doc_id : doc_id}, {operation : {field:  tag_id}})
+
+    def _add_remove_tags(self, ids, operation):
+        doc_id, tag_ids = ids
+        query = self._build_tag_update_query(tag_ids, operation)
+        if query:
+            return self._collection.update({self.doc_id : doc_id}, query)
+
+    def _build_tag_update_query(self, tag_ids, operation):
+        ctrl_tags = [tag_id for tag_id in tag_ids if self._parent._tag_manager.is_control_tag(tag_id)]
+        normal_tags = [x for x in tag_ids if x not in ctrl_tags]
+        query = {operation : {}}
+        if len(ctrl_tags):
+            query[operation][self.doc_control_tags] = {"$each" : ctrl_tags} if operation == "$addToSet" else ctrl_tags
+        if len(normal_tags):
+            query[operation][self.doc_tags] = {"$each" : normal_tags} if operation == "$addToSet" else normal_tags
+        if len(normal_tags) or len(ctrl_tags):
+            return query
+        else:
+            raise ValueError("Empty update statement.")
 
     def _get_result(self, qms):
         query, max_docs, sort = qms
@@ -79,16 +104,16 @@ class DocumentManager(base_manager.BaseManager):
 
     def _build_date_query(self, qdv):
         query, date, value = qdv
-        q = query.get(DocumentManager.doc_id, {})
+        q = query.get(self.doc_id, {})
         q[value] = ObjectId.from_datetime(dtparser.parse(str(date)))
-        return DocumentManager.doc_id, q
+        return self.doc_id, q
 
     def _build_tag_query(self, qtv):
         query, tag, value = qtv
         full_tag = self._parent._tag_manager.get_canonical_tag(tag)
-        field = DocumentManager.doc_control_tags if (TagManager.tag_control in full_tag \
-            and full_tag[TagManager.tag_control]) else DocumentManager.doc_tags
-        if field in query and '$exists' in query[field]: del query[field]
+        field = self.doc_control_tags if (TagManager.tag_control in full_tag \
+            and full_tag[TagManager.tag_control]) else self.doc_tags
+        if field in query and "$exists" in query[field]: del query[field]
         q = query.get(field, {value : [int(full_tag[TagManager.tag_id])]})
         if int(full_tag[TagManager.tag_id]) not in q[value]:
             q[value].append(int(full_tag[TagManager.tag_id]))
@@ -96,13 +121,16 @@ class DocumentManager(base_manager.BaseManager):
 
     def _build_field_query(self, qfv):
         query, field, value = qfv
-        return field, query.get(field, {'$exists' : value})
+        return field, query.get(field, {"$exists" : value})
 
     def _append_list_fields(self, updated_fields):
-        keys = [key for key, value in updated_fields.items() if type(value) is list]
-        return {key : {'$each': updated_fields.pop(key)} for key in keys}
+        keys = [key for key, value in updated_fields.items() if (key in self.array_fields or type(value) is list)]
+        return {key : {'$each' : self._listify(updated_fields.pop(key))} for key in keys}
 
-    def _generate_id(self, doc):
-        if DocumentManager.doc_id not in doc:
+    def _listify(self, obj):
+        return obj if type(obj) is list else [obj]
+
+    def _get_or_generate_id(self, doc):
+        if self.doc_id not in doc:
             return ObjectId.from_datetime(datetime.now())
-        return doc[DocumentManager.doc_id]
+        return doc[self.doc_id]

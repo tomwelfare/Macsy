@@ -26,7 +26,13 @@ class TagManager(base_manager.BaseManager):
         return self._collection.insert(tag)
 
     def update_tag(self, tag_id, tag_name, inheritable=None):
-        raise NotImplementedError()
+        tag = self.get_tag(tag_id)
+        if inheritable:
+            tag[TagManager.tag_inherit] = 1
+        tag[TagManager.tag_name] = tag_name
+        if any(map(tag_name.startswith, TagManager.control_tags)):
+            tag[TagManager.tag_control] = 1
+        return self._collection.update({TagManager.tag_id : tag_id}, {"$set" : tag})
 
     def delete_tag(self, tag_id):
         self._remove_tag_from_all(tag_id)
@@ -35,7 +41,7 @@ class TagManager(base_manager.BaseManager):
     def get_tag(self, tag_id=None, tag_name=None):
         if tag_id is not None:
             return self._collection.find_one({TagManager.tag_id : tag_id})
-        if tag_name is not None:
+        else:
             return self._collection.find_one({TagManager.tag_name : tag_name})
 
     def is_control_tag(self, tag_id=None, tag_name=None):
@@ -65,4 +71,4 @@ class TagManager(base_manager.BaseManager):
     def _remove_tag_from_all(self, tag_id):
         print('Removing tag {} from {} documents.'.format(tag_id, self._parent.count(tags=[tag_id])))
         for doc in self._parent.find(tags=[tag_id]):
-            self._parent.remove_tag(doc[self._parent.doc_id], tag_id)
+            self._parent.remove_tag(doc[self._parent._document_manager.doc_id], tag_id)

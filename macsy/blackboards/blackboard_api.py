@@ -84,8 +84,8 @@ class BlackboardAPI():
             self._check_blackboard_type_errors((blackboard_name, \
                 result.get(CounterManager.counter_type), date_based))
             return result.get(CounterManager.counter_type)
-        return CounterManager.counter_type_date_based \
-            if date_based else CounterManager.counter_type_standard
+        types = {True: CounterManager.counter_type_date_based, False: CounterManager.counter_type_standard, None: None}
+        return types[date_based]
 
     @validate_settings
     def _get_connection_string(self, settings):

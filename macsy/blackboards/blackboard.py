@@ -10,7 +10,6 @@ def check_admin(error):
         def wrap(*args, **kwargs):
             if not args[0].admin_mode:
                 raise PermissionError(error)
-                # Untested??
             return func(*args, **kwargs)
         return wrap
     return dec
