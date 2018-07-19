@@ -49,6 +49,9 @@ class TagManager(base_manager.BaseManager):
     def is_inheritable_tag(self, tag_id=None, tag_name=None):
         return self._tag_has_property(TagManager.tag_inherit, tag_id, tag_name)
 
+    def check_tag_type(self, tag, func):
+        return func(tag_name=tag) if type(tag) is str else func(tag_id=tag)
+
     def tag_exists(self, tag_name):
         exists = self._collection.find_one({TagManager.tag_name : tag_name})
         return True if exists is not None else False
@@ -63,9 +66,6 @@ class TagManager(base_manager.BaseManager):
         if full_tag is None:
             raise ValueError('Tag does not exist: {}'.format(tag))
         return full_tag
-
-    def _check_tag_type(self, tag, func):
-        return func(tag_name=tag) if type(tag) is str else func(tag_id=tag)
 
     def _remove_tag_from_all(self, tag_id):
         for doc in self._parent.find(tags=[tag_id]):

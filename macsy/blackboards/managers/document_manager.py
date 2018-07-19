@@ -46,6 +46,10 @@ class DocumentManager(base_manager.BaseManager):
     def delete(self, doc_id):
         return self._collection.remove({self.doc_id : doc_id})
 
+    def update_document_tags(self, ids, operations):
+        return self._add_remove_tags(ids, operations[0]) if type(ids[1]) is list else \
+            self._add_remove_tag(ids, operations[1])
+
     # Should check for hash values, not just on id?
     def _doc_exists(self, doc):
         return bool(self.count(query={self.doc_id : doc[self.doc_id]}))

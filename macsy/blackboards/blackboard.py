@@ -40,12 +40,10 @@ class Blackboard():
         return self._document_manager.delete(doc_id)
 
     def add_tag(self, doc_id, tag_id):
-        return self._document_manager._add_remove_tags((doc_id, tag_id), "$addToSet") if type(tag_id) is list else \
-            self._document_manager._add_remove_tag((doc_id, tag_id), "$addToSet")
+        return self._document_manager.update_document_tags((doc_id, tag_id), ("$addToSet", "$addToSet"))
 
     def remove_tag(self, doc_id, tag_id):
-        return self._document_manager._add_remove_tags((doc_id, tag_id), "$pullAll") if type(tag_id) is list else \
-            self._document_manager._add_remove_tag((doc_id, tag_id), "$pull")
+        return self._document_manager.update_document_tags((doc_id, tag_id), ("$pullAll", "$pull"))
 
     def insert_tag(self, tag_name, inheritable=False):
         if self._tag_manager.tag_exists(tag_name):
@@ -60,10 +58,10 @@ class Blackboard():
         return self._tag_manager.delete_tag(tag_id)
 
     def get_tag(self, tag):
-        return self._tag_manager._check_tag_type(tag, self._tag_manager.get_tag)
+        return self._tag_manager.check_tag_type(tag, self._tag_manager.get_tag)
 
     def is_control_tag(self, tag):
-        return self._tag_manager._check_tag_type(tag, self._tag_manager.is_control_tag)
+        return self._tag_manager.check_tag_type(tag, self._tag_manager.is_control_tag)
 
     def is_inheritable_tag(self, tag):
-        return self._tag_manager._check_tag_type(tag, self._tag_manager.is_inheritable_tag)
+        return self._tag_manager.check_tag_type(tag, self._tag_manager.is_inheritable_tag)
