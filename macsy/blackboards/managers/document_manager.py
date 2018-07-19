@@ -22,7 +22,7 @@ class DocumentManager(base_manager.BaseManager):
         settings = (kwargs.get('query', self._build_query(**kwargs)), 
             kwargs.pop('max', 0), 
             [(self.doc_id, kwargs.pop('sort', pymongo.DESCENDING))])
-        return self._get_result(settings)
+        return self._get_result(settings), settings[1]
 
     def count(self, **kwargs):
         query = kwargs.get('query', self._build_query(**kwargs))
@@ -30,6 +30,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def insert(self, doc):
         doc[self.doc_id] = self._get_or_generate_id(doc)
+        self._ensure_array_fields(doc)
         return self.update(doc[self.doc_id], doc) if self._doc_exists(doc) else self._collection.insert(doc)
 
     def update(self, doc_id, updated_fields):
@@ -60,26 +61,20 @@ class DocumentManager(base_manager.BaseManager):
     def _add_remove_tag(self, ids, operation):
         doc_id, tag_id = ids
         field = self.doc_control_tags if self._parent._tag_manager.is_control_tag(tag_id) else self.doc_tags
-        return self.update({self.doc_id : doc_id}, {operation : {field:  tag_id}})
+        return self._collection.update({self.doc_id : doc_id}, {operation : {field:  tag_id}})
 
     def _add_remove_tags(self, ids, operation):
         doc_id, tag_ids = ids
         query = self._build_tag_update_query(tag_ids, operation)
-        if query:
-            return self._collection.update({self.doc_id : doc_id}, query)
+        return self._collection.update({self.doc_id : doc_id}, query)
 
     def _build_tag_update_query(self, tag_ids, operation):
         ctrl_tags = [tag_id for tag_id in tag_ids if self._parent._tag_manager.is_control_tag(tag_id)]
         normal_tags = [x for x in tag_ids if x not in ctrl_tags]
         query = {operation : {}}
-        if len(ctrl_tags):
-            query[operation][self.doc_control_tags] = {"$each" : ctrl_tags} if operation == "$addToSet" else ctrl_tags
-        if len(normal_tags):
-            query[operation][self.doc_tags] = {"$each" : normal_tags} if operation == "$addToSet" else normal_tags
-        if len(normal_tags) or len(ctrl_tags):
-            return query
-        else:
-            raise ValueError("Empty update statement.")
+        query[operation][self.doc_control_tags] = {"$each" : ctrl_tags} if operation == "$addToSet" else ctrl_tags
+        query[operation][self.doc_tags] = {"$each" : normal_tags} if operation == "$addToSet" else normal_tags
+        return query
 
     def _get_result(self, qms):
         query, max_docs, sort = qms
@@ -132,5 +127,9 @@ class DocumentManager(base_manager.BaseManager):
 
     def _get_or_generate_id(self, doc):
         if self.doc_id not in doc:
-            return ObjectId.from_datetime(datetime.now())
+            return self._parent._counter_manager.get_next_id_and_increment(self._parent._counter_manager.counter_doc)
         return doc[self.doc_id]
+
+    def _ensure_array_fields(self, doc):
+        missing_tags = {field : [] for field in self.array_fields if field not in doc}
+        doc.update(missing_tags)

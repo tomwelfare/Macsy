@@ -1,7 +1,6 @@
 import pymongo
 from bson.objectid import ObjectId
-from macsy.blackboards.managers import base_manager, counter_manager
-CounterManager = counter_manager.CounterManager
+from macsy.blackboards.managers import base_manager
 
 class TagManager(base_manager.BaseManager):
 
@@ -19,7 +18,7 @@ class TagManager(base_manager.BaseManager):
     def insert_tag(self, tag_name, inheritable=False):
         ctrl = 1 if any(map(tag_name.startswith, TagManager.control_tags)) else 0
         inherit = 0 if inheritable is not True else 1
-        tag = {TagManager.tag_id : self._parent._counter_manager.get_next_tag_id_and_increment(), 
+        tag = {TagManager.tag_id : self._parent._counter_manager.get_next_id_and_increment(self._parent._counter_manager.counter_tag), 
             TagManager.tag_name : tag_name, 
             TagManager.tag_control : ctrl, 
             TagManager.tag_inherit : inherit}
@@ -69,6 +68,5 @@ class TagManager(base_manager.BaseManager):
         return func(tag_name=tag) if type(tag) is str else func(tag_id=tag)
 
     def _remove_tag_from_all(self, tag_id):
-        print('Removing tag {} from {} documents.'.format(tag_id, self._parent.count(tags=[tag_id])))
         for doc in self._parent.find(tags=[tag_id]):
             self._parent.remove_tag(doc[self._parent._document_manager.doc_id], tag_id)

@@ -25,6 +25,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def insert(self, doc):
         doc[self.doc_id] = self._get_or_generate_id(doc)
+        self._ensure_array_fields(doc)
         year = self._get_doc_year(doc)
         return self.update(doc[self.doc_id], doc) if self._doc_exists(doc) else self._collections[year].insert(doc)
 
@@ -50,6 +51,11 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def get_latest_date(self):
         return self._get_extremal_date(self._max_year, pymongo.DESCENDING)
+
+    def _get_or_generate_id(self, doc):
+        if self.doc_id not in doc:
+            return ObjectId.from_datetime(datetime.now())
+        return doc[self.doc_id]
 
     def _get_result(self, qms):
         query, max_docs, sort = qms

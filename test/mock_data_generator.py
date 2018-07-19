@@ -43,7 +43,8 @@ def generate_date_based_blackboard(db, blackboard_name):
     tags_coll = db[blackboard_name + TagManager.tag_suffix]
     tag_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     tgs = [{'_id': x, 'Nm': 'Tag_{}'.format(x), 'Ctrl': 0} for x in tag_ids]
-    tgs.extend([{'_id': 11, 'Nm': 'FOR>Tag_11', 'Ctrl': 1},{'_id': 12, 'Nm': 'POST>Tag_12', 'Ctrl': 1}])    
+    tgs.append({'_id': 11, 'Nm': 'FOR>Tag_11', 'Ctrl': 1})
+    tgs.append({'_id': 12, 'Nm': 'POST>Tag_12', 'Ctrl': 1})    
     tags_coll.insert(tgs)
 
     # Generate counter collection
@@ -64,15 +65,19 @@ def generate_standard_blackboard(db, blackboard_name):
     tags_coll = db[blackboard_name + TagManager.tag_suffix]
     tag_ids = [1, 2, 3, 4, 5, 6, 7, 8, 9, 10]
     tgs = [{'_id': x, 'Nm': 'Tag_{}'.format(x), 'Ctrl': 0} for x in tag_ids[0:5]]
-    tgs.extend([{'_id': x, 'Nm': 'Tag_{}'.format(x), 'DInh': 0} for x in tag_ids[6:10]])
-    tgs.extend([{'_id': 11, 'Nm': 'Tag_11', 'Ctrl': 1},{'_id': 12, 'Nm': 'Tag_12', 'Ctrl': 1}]) 
+    tgs.extend([{'_id': x, 'Nm': 'Tag_{}'.format(x), 'DInh': 0} for x in tag_ids[5:10]])
+    tgs.extend([{'_id': 11, 'Nm': 'FOR>Tag_11', 'Ctrl': 1},{'_id': 12, 'Nm': 'POST>Tag_12', 'Ctrl': 1}])
     tags_coll.insert(tgs)
+
+    # Generate standard collection
+    document_coll = db[blackboard_name]
+    for i in range(1, 11):
+        doc = {'_id': i, 'Nm': 'Feed {}'.format(i), 'Tg' : [tag_ids[i-1]], 'FOR' : [11, 12]}
+        if i == 5:
+            doc['Single'] = True
+        document_coll.insert(doc)
 
     # Generate counter collection
     counter_coll = db[blackboard_name + CounterManager.counter_suffix]
     counter_coll.insert({"_id" : CounterManager.counter_type, CounterManager.counter_type : CounterManager.counter_type_standard})
-
-    # Generate standard collection
-    document_coll = db[blackboard_name]
-    for i in range(1, 10):
-        document_coll.insert({'_id': i, 'Nm': 'Feed {}'.format(i), 'Tg' : [tag_ids[i]], 'FOR' : [11, 12]})
+    counter_coll.insert({"_id" : CounterManager.counter_next, CounterManager.counter_tag : tags_coll.count() + 1, CounterManager.counter_doc : document_coll.count()+1})
