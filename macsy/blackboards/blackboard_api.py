@@ -49,7 +49,6 @@ class BlackboardAPI():
 
     def get_blackboard_names(self):
         suffix_len = len(CounterManager.counter_suffix)
-
         collections = self.__db.collection_names(include_system_collections=False)
         blackboards = (coll[0:-suffix_len] for coll in collections if coll.endswith(CounterManager.counter_suffix))
         blackboards = [blackboard for blackboard in blackboards if self.blackboard_exists(blackboard)]

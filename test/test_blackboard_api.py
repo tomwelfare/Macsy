@@ -72,6 +72,10 @@ class TestBlackboardAPI(unittest.TestCase):
         self.api.drop_blackboard('FEED')
         self.assertEqual(self.api.blackboard_exists('FEED'), False)
 
+    def test_api_get_blackboard_names(self):
+        self.api = BlackboardAPI(mock_data_generator.settings(), MongoClient=mock_data_generator.mock_client)
+        self.assertSetEqual(set(self.api.get_blackboard_names()), set(['FEED', 'ARTICLE', 'ARTICLE2']))
+
     def test_api_get_blackboard_type(self):
         self.api = BlackboardAPI(mock_data_generator.settings(), MongoClient=mock_data_generator.mock_client)
         
