@@ -1,6 +1,6 @@
 [![Build Status](https://travis-ci.org/uob-mediapatterns/macsy.png?branch=master)](https://travis-ci.org/uob-mediapatterns/macsy)[![Test Coverage](https://api.codeclimate.com/v1/badges/b6a597a84cfa9d56256b/test_coverage)](https://codeclimate.com/github/uob-mediapatterns/macsy/test_coverage)[![Maintainability](https://api.codeclimate.com/v1/badges/b6a597a84cfa9d56256b/maintainability)](https://codeclimate.com/github/uob-mediapatterns/macsy/maintainability)[![BCH compliance](https://bettercodehub.com/edge/badge/uob-mediapatterns/macsy?branch=master)](https://bettercodehub.com/)
-# Modular Architecture for Cognitive Systems (macsy)
-Intelligent systems for the annotation of content is increasingly being used for the automation of social science research. 
+# Modular Architecture for Cognitive Systems (Macsy)
+Intelligent systems for the annotation of content are increasingly being used for the automation of social science research. 
 
 In this domain, the problem of integrating various Artificial Intelligence (AI) algorithms into a single intelligent system arises spontaneously. As part of an ongoing effort in automating content analysis for the social sciences, we have built a modular system by combining multiple AI modules into a flexible framework in which they can cooperate in complex tasks. 
 
