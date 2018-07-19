@@ -3,4 +3,3 @@ urllib3==1.7.1
 mongomock==3.10.0
 python-dateutil==2.7.3
 coverage==4.5.1
-automodinit==0.16
