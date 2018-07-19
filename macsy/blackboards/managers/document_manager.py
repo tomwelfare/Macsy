@@ -46,14 +46,6 @@ class DocumentManager(base_manager.BaseManager):
     def delete(self, doc_id):
         return self._collection.remove({self.doc_id : doc_id})
 
-    def add_tag(self, doc_id, tag_id):
-        return self._add_remove_tags((doc_id, tag_id), "$addToSet") if type(tag_id) is list else \
-            self._add_remove_tag((doc_id, tag_id), "$addToSet")
-    
-    def remove_tag(self, doc_id, tag_id):
-        return self._add_remove_tags((doc_id, tag_id), "$pullAll") if type(tag_id) is list else \
-            self._add_remove_tag((doc_id, tag_id), "$pull")
-
     # Should check for hash values, not just on id?
     def _doc_exists(self, doc):
         return bool(self.count(query={self.doc_id : doc[self.doc_id]}))
@@ -72,8 +64,8 @@ class DocumentManager(base_manager.BaseManager):
         ctrl_tags = [tag_id for tag_id in tag_ids if self._parent._tag_manager.is_control_tag(tag_id)]
         normal_tags = [x for x in tag_ids if x not in ctrl_tags]
         query = {operation : {}}
-        query[operation][self.doc_control_tags] = {"$each" : ctrl_tags} if operation == "$addToSet" else ctrl_tags
-        query[operation][self.doc_tags] = {"$each" : normal_tags} if operation == "$addToSet" else normal_tags
+        for tags, field in [(ctrl_tags, self.doc_control_tags), (normal_tags, self.doc_tags)]:
+            query[operation][field] = {"$each" : tags} if operation == "$addToSet" else tags
         return query
 
     def _get_result(self, qms):

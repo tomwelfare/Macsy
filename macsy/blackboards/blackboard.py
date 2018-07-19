@@ -40,10 +40,12 @@ class Blackboard():
         return self._document_manager.delete(doc_id)
 
     def add_tag(self, doc_id, tag_id):
-        return self._document_manager.add_tag(doc_id, tag_id)
+        return self._document_manager._add_remove_tags((doc_id, tag_id), "$addToSet") if type(tag_id) is list else \
+            self._document_manager._add_remove_tag((doc_id, tag_id), "$addToSet")
 
     def remove_tag(self, doc_id, tag_id):
-        return self._document_manager.remove_tag(doc_id, tag_id)
+        return self._document_manager._add_remove_tags((doc_id, tag_id), "$pullAll") if type(tag_id) is list else \
+            self._document_manager._add_remove_tag((doc_id, tag_id), "$pull")
 
     def insert_tag(self, tag_name, inheritable=False):
         if self._tag_manager.tag_exists(tag_name):
