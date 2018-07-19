@@ -56,7 +56,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def _add_remove_tag(self, ids, operation):
         doc_id, tag_id = ids
-        field = self.doc_control_tags if self._parent._tag_manager.is_control_tag(tag_id) else self.doc_tags
+        field = self.doc_control_tags if self._parent.tag_manager.is_control_tag(tag_id) else self.doc_tags
         return self._collection.update({self.doc_id : doc_id}, {operation : {field:  tag_id}})
 
     def _add_remove_tags(self, ids, operation):
@@ -65,7 +65,7 @@ class DocumentManager(base_manager.BaseManager):
         return self._collection.update({self.doc_id : doc_id}, query)
 
     def _build_tag_update_query(self, tag_ids, operation):
-        ctrl_tags = [tag_id for tag_id in tag_ids if self._parent._tag_manager.is_control_tag(tag_id)]
+        ctrl_tags = [tag_id for tag_id in tag_ids if self._parent.tag_manager.is_control_tag(tag_id)]
         normal_tags = [x for x in tag_ids if x not in ctrl_tags]
         query = {operation : {}}
         for tags, field in [(ctrl_tags, self.doc_control_tags), (normal_tags, self.doc_tags)]:
@@ -101,7 +101,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def _build_tag_query(self, qtv):
         query, tag, value = qtv
-        full_tag = self._parent._tag_manager.get_canonical_tag(tag)
+        full_tag = self._parent.tag_manager.get_canonical_tag(tag)
         field = self.doc_control_tags if (TagManager.tag_control in full_tag \
             and full_tag[TagManager.tag_control]) else self.doc_tags
         if field in query and "$exists" in query[field]: del query[field]
@@ -123,7 +123,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def _get_or_generate_id(self, doc):
         if self.doc_id not in doc:
-            return self._parent._counter_manager.get_next_id_and_increment(self._parent._counter_manager.counter_doc)
+            return self._parent.counter_manager.get_next_id_and_increment(self._parent.counter_manager.counter_doc)
         return doc[self.doc_id]
 
     def _ensure_array_fields(self, doc):

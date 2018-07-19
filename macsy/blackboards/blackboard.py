@@ -18,50 +18,50 @@ class Blackboard():
 
     def __init__(self, settings):
         self._db, self._name, self.admin_mode = settings
-        self._document_manager = DocumentManager(self)
-        self._tag_manager = TagManager(self)
-        self._counter_manager = CounterManager(self)
+        self.document_manager = DocumentManager(self)
+        self.tag_manager = TagManager(self)
+        self.counter_manager = CounterManager(self)
 
     def count(self, **kwargs):
-        return self._document_manager.count(**kwargs)
+        return self.document_manager.count(**kwargs)
 
     def find(self, **kwargs):
-        return BlackboardCursor(self._document_manager.find(**kwargs))
+        return BlackboardCursor(self.document_manager.find(**kwargs))
 
     # Later on, need to add bulk insert/update/delete methods
     def insert(self, doc):
-        return self._document_manager.insert(doc)
+        return self.document_manager.insert(doc)
 
     def update(self, doc_id, updated_fields):
-        return self._document_manager.update(doc_id, updated_fields)
+        return self.document_manager.update(doc_id, updated_fields)
 
     @check_admin('Admin rights required to delete documents.')
     def delete(self, doc_id):
-        return self._document_manager.delete(doc_id)
+        return self.document_manager.delete(doc_id)
 
     def add_tag(self, doc_id, tag_id):
-        return self._document_manager.update_document_tags((doc_id, tag_id), ("$addToSet", "$addToSet"))
+        return self.document_manager.update_document_tags((doc_id, tag_id), ("$addToSet", "$addToSet"))
 
     def remove_tag(self, doc_id, tag_id):
-        return self._document_manager.update_document_tags((doc_id, tag_id), ("$pullAll", "$pull"))
+        return self.document_manager.update_document_tags((doc_id, tag_id), ("$pullAll", "$pull"))
 
     def insert_tag(self, tag_name, inheritable=False):
-        if self._tag_manager.tag_exists(tag_name):
+        if self.tag_manager.tag_exists(tag_name):
             raise ValueError('Tag already exists')
-        return self._tag_manager.insert_tag(tag_name, inheritable)
+        return self.tag_manager.insert_tag(tag_name, inheritable)
 
     def update_tag(self, tag_id, tag_name, inheritable=None):
-        return self._tag_manager.update_tag(tag_id, tag_name, inheritable)
+        return self.tag_manager.update_tag(tag_id, tag_name, inheritable)
 
     @check_admin('Admin rights required to delete tags.')
     def delete_tag(self, tag_id):
-        return self._tag_manager.delete_tag(tag_id)
+        return self.tag_manager.delete_tag(tag_id)
 
     def get_tag(self, tag):
-        return self._tag_manager.check_tag_type(tag, self._tag_manager.get_tag)
+        return self.tag_manager.check_tag_type(tag, self.tag_manager.get_tag)
 
     def is_control_tag(self, tag):
-        return self._tag_manager.check_tag_type(tag, self._tag_manager.is_control_tag)
+        return self.tag_manager.check_tag_type(tag, self.tag_manager.is_control_tag)
 
     def is_inheritable_tag(self, tag):
-        return self._tag_manager.check_tag_type(tag, self._tag_manager.is_inheritable_tag)
+        return self.tag_manager.check_tag_type(tag, self.tag_manager.is_inheritable_tag)

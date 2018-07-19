@@ -70,7 +70,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
     def _add_remove_tag(self, ids, operation):
         doc_id, tag_id = ids
         year = self._get_doc_year({self.doc_id : doc_id})
-        field = self.doc_control_tags if self._parent._tag_manager.is_control_tag(tag_id) else self.doc_tags
+        field = self.doc_control_tags if self._parent.tag_manager.is_control_tag(tag_id) else self.doc_tags
         return  self._collections[year].update({self.doc_id : doc_id}, {operation : {field:  tag_id}})
 
     def _add_remove_tags(self, ids, operation):

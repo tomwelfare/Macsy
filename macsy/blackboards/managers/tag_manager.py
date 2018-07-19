@@ -18,7 +18,7 @@ class TagManager(base_manager.BaseManager):
     def insert_tag(self, tag_name, inheritable=False):
         ctrl = 1 if any(map(tag_name.startswith, TagManager.control_tags)) else 0
         inherit = 0 if inheritable is not True else 1
-        tag = {TagManager.tag_id : self._parent._counter_manager.get_next_id_and_increment(self._parent._counter_manager.counter_tag), 
+        tag = {TagManager.tag_id : self._parent.counter_manager.get_next_id_and_increment(self._parent.counter_manager.counter_tag), 
             TagManager.tag_name : tag_name, 
             TagManager.tag_control : ctrl, 
             TagManager.tag_inherit : inherit}
@@ -69,4 +69,4 @@ class TagManager(base_manager.BaseManager):
 
     def _remove_tag_from_all(self, tag_id):
         for doc in self._parent.find(tags=[tag_id]):
-            self._parent.remove_tag(doc[self._parent._document_manager.doc_id], tag_id)
+            self._parent.remove_tag(doc[self._parent.document_manager.doc_id], tag_id)
