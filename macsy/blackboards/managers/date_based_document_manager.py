@@ -62,6 +62,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
     def _get_result(self, qms):
         query, max_docs, sort = qms
         return [self._collections[year].find(query).sort(sort).limit(max_docs) for year in range(self._max_year, self._min_year-1,-1)]
+        return [self._collections[year].find(query) for year in range(self._max_year, self._min_year-1,-1)]
 
     def _get_extremal_date(self, year, order):
         return self.get_date(self._collections[year].find().sort(self.doc_id, order).limit(1)[0])
