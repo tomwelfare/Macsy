@@ -45,13 +45,14 @@ class BlackboardAPI():
             BlackboardAPI._setting_fields.get('dburl')].replace('mongodb://', '').strip('/')
         self.__admin_mode = self._check_admin_attempt(settings)
         self.__client = MongoClient(self._get_connection_string(settings))
+
         self.__db = self.__client[self.__dbname]
 
     def get_blackboard_names(self):
         suffix_len = len(CounterManager.counter_suffix)
         collections = self.__db.collection_names(include_system_collections=False)
         blackboards = (coll[0:-suffix_len] for coll in collections if coll.endswith(CounterManager.counter_suffix))
-        blackboards = [blackboard for blackboard in blackboards if self.blackboard_exists(blackboard)]
+        blackboards = [blackboard for blackboard in blackboards if self.blackboard_exists(blackboard.split('_')[0])]
 
         return blackboards
 
@@ -89,7 +90,7 @@ class BlackboardAPI():
         collection = self.__db[blackboard_name + CounterManager.counter_suffix]
         result = collection.find_one({CounterManager.counter_id : CounterManager.counter_type})
         if result is not None:
-            self._check_blackboard_type_errors((blackboard_name, \
+            BlackboardAPI._check_blackboard_type_errors((blackboard_name, \
                 result.get(CounterManager.counter_type), date_based))
             return result.get(CounterManager.counter_type)
         types = {True: CounterManager.counter_type_date_based, False: CounterManager.counter_type_standard, None: None}
@@ -99,22 +100,16 @@ class BlackboardAPI():
     def _get_connection_string(self, settings):
         ''' Get the connection string details to be passed to the MongoClient.'''
         settings = (self.__username, self.__password, \
-            self.__dburl, self.__dbname, '?readPreference=secondary')
+            self.__dburl, self.__dbname, '')#'?readPreference=secondary')
         return 'mongodb://%s:%s@%s/%s%s' % settings
 
     @validate_settings
     def _check_admin_attempt(self, settings):
         ''' Check if the user has rights to run in admin_mode, and salt their password if not'''
-        self.__password += str(BlackboardAPI._salt) if \
-            self.__username is not BlackboardAPI._admin_user else ''
-        return True if self.__username == BlackboardAPI._admin_user else False
-
-    def _check_blackboard_type_errors(self, ntd):
-        standard = ntd[1] == CounterManager.counter_type_standard
-        atype = CounterManager.counter_type_standard if standard else \
-            CounterManager.counter_type_date_based
-        if ntd[2] == standard:
-            raise ValueError('{} is a {} blackboard.'.format(ntd[0], atype))
+        if self.__username != BlackboardAPI._admin_user:
+            self.__password += str(BlackboardAPI._salt)
+            return False
+        return True
 
     def __drop_standard_blackboard(self, blackboard_name):
         for suffix in ['', CounterManager.counter_suffix, TagManager.tag_suffix]:
@@ -126,3 +121,11 @@ class BlackboardAPI():
             if blackboard_name == coll.split('_')[0] and (suffix.isdigit() or \
                 suffix in CounterManager.counter_suffix or TagManager.tag_suffix):
                 self.__db.drop_collection(coll)
+
+    @staticmethod
+    def _check_blackboard_type_errors(ntd):
+        standard = ntd[1] == CounterManager.counter_type_standard
+        atype = CounterManager.counter_type_standard if standard else \
+            CounterManager.counter_type_date_based
+        if ntd[2] == standard:
+            raise ValueError('{} is a {} blackboard.'.format(ntd[0], atype))

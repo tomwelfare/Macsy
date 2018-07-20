@@ -1,11 +1,13 @@
 import inspect
+from bson.codec_options import DEFAULT_CODEC_OPTIONS
+codec_options = DEFAULT_CODEC_OPTIONS.with_options(unicode_decode_error_handler='ignore')
 
 class BaseManager():
 
     def __init__(self, parent, suffix):
         self.checkCaller()
         self._parent = parent
-        self._collection = self._parent._db[self._parent._name + suffix]
+        self._collection = self._parent._db.get_collection(self._parent._name + suffix, codec_options=codec_options)
 
     def checkCaller(self):
         from macsy.blackboards import blackboard, date_based_blackboard

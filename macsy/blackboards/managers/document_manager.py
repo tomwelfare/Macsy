@@ -47,7 +47,7 @@ class DocumentManager(base_manager.BaseManager):
         return self._collection.remove({self.doc_id : doc_id})
 
     def update_document_tags(self, ids, operations):
-        return self._add_remove_tags(ids, operations[0]) if type(ids[1]) is list else \
+        return self._add_remove_tags(ids, operations[0]) if isinstance(ids[1],list) else \
             self._add_remove_tag(ids, operations[1])
 
     # Should check for hash values, not just on id?
@@ -74,7 +74,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def _get_result(self, qms):
         query, max_docs, sort = qms
-        return self._collection.find(query).limit(max_docs).sort(sort)
+        return self._collection.find(query).sort(sort).limit(max_docs)
 
     def _build_query(self, **kwargs):
         qw = {'tags' : ('$all', self._build_tag_query, {}), 
@@ -86,7 +86,7 @@ class DocumentManager(base_manager.BaseManager):
         query = {}
         for k in set(kwargs).intersection(qw):
             for d in kwargs.get(k,qw[k][2]):
-                assert type(kwargs.get(k,qw[k][2])) is list, \
+                assert isinstance(kwargs.get(k,qw[k][2]), list), \
                 'Argument needs to be a list: {}'.format(kwargs.get(k, qw[k][2]))
                 key, value = qw[k][1]((query, d, qw[k][0]))
                 query[key] = value
@@ -115,11 +115,11 @@ class DocumentManager(base_manager.BaseManager):
         return field, query.get(field, {"$exists" : value})
 
     def _append_list_fields(self, updated_fields):
-        keys = [key for key, value in updated_fields.items() if (key in self.array_fields or type(value) is list)]
+        keys = [key for key, value in updated_fields.items() if (key in self.array_fields or isinstance(value, list))]
         return {key : {'$each' : self._listify(updated_fields.pop(key))} for key in keys}
 
     def _listify(self, obj):
-        return obj if type(obj) is list else [obj]
+        return obj if isinstance(obj,list) else [obj]
 
     def _get_or_generate_id(self, doc):
         if self.doc_id not in doc:

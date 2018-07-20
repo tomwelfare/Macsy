@@ -2,6 +2,8 @@ import pymongo
 from datetime import datetime
 from bson import ObjectId
 from macsy.blackboards.managers import document_manager
+from bson.codec_options import DEFAULT_CODEC_OPTIONS
+codec_options = DEFAULT_CODEC_OPTIONS.with_options(unicode_decode_error_handler='ignore')
 
 class DateBasedDocumentManager(document_manager.DocumentManager):
 
@@ -15,7 +17,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def _populate_collections(self):
         colls = ((coll.split('_')[-1], coll) for coll in self._parent._db.collection_names() if self._parent._name in coll)
-        self._collections = {int(year): self._parent._db[coll] for year, coll in colls if year.isdigit()}
+        self._collections = {int(year): self._parent._db.get_collection(coll,codec_options=codec_options) for year, coll in colls if year.isdigit()}
         self._max_year = max(self._collections.keys())
         self._min_year = min(self._collections.keys())
 
@@ -42,7 +44,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         return self._collections[year].remove({self.doc_id : doc_id})
 
     def get_date(self, doc):
-        if self.doc_id in doc and type(doc[self.doc_id]) is ObjectId:
+        if self.doc_id in doc and isinstance(doc[self.doc_id], ObjectId):
             return doc[self.doc_id].generation_time           
         raise ValueError('Document does not have an ObjectId in the {} field'.format(self.doc_id))
 
@@ -59,7 +61,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
 
     def _get_result(self, qms):
         query, max_docs, sort = qms
-        return [self._collections[year].find(query).limit(max_docs).sort(sort) for year in range(self._min_year, self._max_year+1)]
+        return [self._collections[year].find(query).sort(sort).limit(max_docs) for year in range(self._max_year, self._min_year-1,-1)]
 
     def _get_extremal_date(self, year, order):
         return self.get_date(self._collections[year].find().sort(self.doc_id, order).limit(1)[0])

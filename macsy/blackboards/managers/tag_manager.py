@@ -50,7 +50,7 @@ class TagManager(base_manager.BaseManager):
         return self._tag_has_property(TagManager.tag_inherit, tag_id, tag_name)
 
     def check_tag_type(self, tag, func):
-        return func(tag_name=tag) if type(tag) is str else func(tag_id=tag)
+        return func(tag_name=tag) if isinstance(tag, str) else func(tag_id=tag)
 
     def tag_exists(self, tag_name):
         exists = self._collection.find_one({TagManager.tag_name : tag_name})
@@ -62,7 +62,7 @@ class TagManager(base_manager.BaseManager):
         return bool(test)
 
     def get_canonical_tag(self, tag):
-        full_tag = self.get_tag(tag_name=tag) if type(tag) is str else self.get_tag(tag_id=tag)
+        full_tag = self.get_tag(tag_name=tag) if isinstance(tag,str) else self.get_tag(tag_id=tag)
         if full_tag is None:
             raise ValueError('Tag does not exist: {}'.format(tag))
         return full_tag
