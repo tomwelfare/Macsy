@@ -13,8 +13,7 @@ setup(
     url="https://github.com/uob-mediapatterns/macsy",
     packages=["macsy"],
     install_requires=[
-        'pymongo==2.7.0',
-        'automodinit',
+        'pymongo==3.5.1',
 	'python-dateutil',
     ]
 )
