@@ -64,9 +64,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         asc = bool(sort[0][1] == pymongo.ASCENDING)
         years = range(self._max_year, self._min_year-1, pymongo.DESCENDING)
         years_asc = range(self._min_year, self._max_year+1, pymongo.ASCENDING)
-        result_set = [self._collections[year].find(query).sort(sort).limit(max_docs) for year in years_asc] if asc else \
-            [self._collections[year].find(query).sort(sort).limit(max_docs) for year in years]
-        return result_set
+        return [self._collections[year].find(query).sort(sort).limit(max_docs) for year in years_asc] if asc else [self._collections[year].find(query).sort(sort).limit(max_docs) for year in years]
 
     def _get_extremal_date(self, year, order):
         return self.get_date(self._collections[year].find().sort(self.doc_id, order).limit(1)[0])
