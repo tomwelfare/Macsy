@@ -45,7 +45,10 @@ class TestBlackboards(unittest.TestCase):
         self.assertEqual(len(self.bb.find(fields = ['Nm'])), 10)
         self.assertEqual(len(self.bb.find(fields = ['Single'])), 1)
         self.assertEqual(len(self.bb.find(without_fields = ['Single'])), 9)
-        self.assertEqual(len([x for x in self.bb.find(max = 3, sort = -1)]), 3)
+        self.assertEqual([x for x in self.bb.find(max = 3, sort = 1)][0]['_id'], 1)
+        with self.assertRaises(IndexError): [x for x in self.bb.find(max = 3, sort = 1)][3]
+        self.assertEqual([x for x in self.bb.find(sort = 1)][0]['_id'], 1)
+        self.assertEqual([x for x in self.bb.find(sort = -1)][0]['_id'], 10)
 
     def test_insert(self):
         # Generate a doc, check # of docs, insert it, check it's incremented
@@ -120,7 +123,8 @@ class TestBlackboards(unittest.TestCase):
         self.assertEqual([x for x in self.bb.find(query={'Tg' : [2, 4]})][0][DocumentManager.doc_id], obj_id)
         result = self.bb.remove_tag(obj_id, [2,8])
         self.assertEqual(result['err'], None)
-        self.assertEqual([x for x in self.bb.find(query={'Tg' : [4]})][0][DocumentManager.doc_id], obj_id)
+        self.assertEqual([x for x in self.bb.find(query={'Tg' : [4]}, sort=1)][1][DocumentManager.doc_id], obj_id)
+        self.assertEqual([x for x in self.bb.find(query={'Tg' : [4]}, sort=-1)][0][DocumentManager.doc_id], obj_id)
 
     def test_insert_tag(self):
         self.assertEqual(self.bb.get_tag('Non-existed-tag'), None)

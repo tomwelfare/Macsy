@@ -75,7 +75,6 @@ class DocumentManager(base_manager.BaseManager):
     def _get_result(self, qms):
         query, max_docs, sort = qms
         return self._collection.find(query).sort(sort).limit(max_docs)
-        #return self._collection.find(query)
 
     def _build_query(self, **kwargs):
         qw = {'tags' : ('$all', self._build_tag_query, {}), 
