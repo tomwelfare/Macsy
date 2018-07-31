@@ -43,6 +43,9 @@ class TagManager(base_manager.BaseManager):
         else:
             return self._collection.find_one({TagManager.tag_name : tag_name})
 
+    def get_all_tags(self):
+        return self._collection.find()
+
     def is_control_tag(self, tag_id=None, tag_name=None):
         return self._tag_has_property(TagManager.tag_control, tag_id, tag_name)
 

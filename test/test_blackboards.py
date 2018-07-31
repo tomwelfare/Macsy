@@ -98,6 +98,10 @@ class TestBlackboards(unittest.TestCase):
         self.assertEqual(self.bb.count(query={'Deleted' : False}), 0)
         self.assertEqual(self.bb.count(), expected-1)
 
+    def test_get_all_tags(self):
+        self.assertEqual(len([x for x in self.bb.get_all_tags()]), 12)
+        self.assertEqual([x for x in self.bb.get_all_tags()][0]['Nm'],'Tag_1')
+
     def test_add_tag(self):
         obj_id = self.bb.insert({'hasTags' : False})
         self.assertEqual(obj_id, 11)

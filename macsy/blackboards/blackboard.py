@@ -39,6 +39,9 @@ class Blackboard():
     def delete(self, doc_id):
         return self.document_manager.delete(doc_id)
 
+    def get_all_tags(self):
+        return self.tag_manager.get_all_tags()
+
     def add_tag(self, doc_id, tag_id):
         return self.document_manager.update_document_tags((doc_id, tag_id), ("$addToSet", "$addToSet"))
 
