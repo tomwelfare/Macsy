@@ -49,6 +49,11 @@ class TestDateBasedBlackboards(unittest.TestCase):
         with self.assertRaises(ValueError): self.bb.find(tags = ['Tag_4', 13])
         with self.assertRaises(ValueError): self.bb.find(tags = ['Tag_4', -5])
 
+        self.assertEqual(len([x for x in self.bb.find(tags = ['FOR>Tag_11', 12], max = 5)]), 5)
+        self.assertEqual(len(self.bb.find(tags = ['FOR>Tag_11', 12], max = 5)), 5)
+        self.assertEqual(len(self.bb.find(tags = ['FOR>Tag_11', 12], max = 1)), 1)
+        self.assertEqual(len(self.bb.find(min_date=['01-01-2016'], tags = ['FOR>Tag_11', 12], max = 2)), 2)
+
     def test_insert(self):
         # Generate a doc, check # of docs, insert it, check it's incremented
         obj_id = ObjectId.from_datetime(dtparser.parse('21-10-2017'))
