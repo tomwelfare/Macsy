@@ -34,6 +34,7 @@ class TestDateBasedBlackboards(unittest.TestCase):
         self.assertEqual(self.bb.count(), 10)
         self.assertEqual(self.bb.count(query={'T' : 'Title 3'}), 1)
         self.assertEqual(self.bb.count(max_date=['02-01-2016'], tags = ['FOR>Tag_11', 12]), 8)
+        self.assertEqual(self.bb.count(max_date=['03-01-2016'], min_date=['02-01-2012'], tags = ['FOR>Tag_11', 12]), 4)
         self.assertEqual(self.bb.count(query={'BLANK' : 'Title 3'}), 0)
 
     def test_bb_find(self):

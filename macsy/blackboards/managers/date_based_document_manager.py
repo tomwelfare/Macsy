@@ -1,5 +1,6 @@
 import pymongo
 from datetime import datetime
+from dateutil import parser as dtparser
 from bson import ObjectId
 from macsy.blackboards.managers import document_manager
 from bson.codec_options import DEFAULT_CODEC_OPTIONS
@@ -21,9 +22,17 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         self._max_year = max(self._collections.keys())
         self._min_year = min(self._collections.keys())
 
+    def find(self, **kwargs):
+        settings = (kwargs.get('query', self._build_query(**kwargs)), 
+            kwargs.pop('max', 0), 
+            [(self.doc_id, kwargs.pop('sort', pymongo.DESCENDING))],
+            self._parse_year_range(**kwargs))
+        return self._get_result(settings), settings[1]
+
     def count(self, **kwargs):
         query = kwargs.get('query', self._build_query(**kwargs))
-        return sum(coll.find(query).count() for coll in self._collections.values())
+        min_year, max_year = self._parse_year_range(**kwargs)
+        return sum([self._collections[year].find(query).count() for year in range(max_year, min_year-1, pymongo.DESCENDING)])
 
     def insert(self, doc):
         doc[self.doc_id] = self._get_or_generate_id(doc)
@@ -59,11 +68,11 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
             return ObjectId.from_datetime(datetime.now())
         return doc[self.doc_id]
 
-    def _get_result(self, qms):
-        query, max_docs, sort = qms
+    def _get_result(self, qmsy):
+        query, max_docs, sort, years = qmsy
         asc = bool(sort[0][1] == pymongo.ASCENDING)
-        years = range(self._min_year, self._max_year+1, pymongo.ASCENDING) if asc else range(self._max_year, self._min_year-1, pymongo.DESCENDING) 
-        return [self._collections[year].find(query).sort(sort).limit(max_docs) for year in years]
+        year_range = range(years[0], years[1]+1, pymongo.ASCENDING) if asc else range(years[1], years[0]-1, pymongo.DESCENDING)
+        return [self._collections[year].find(query).sort(sort).limit(max_docs) for year in year_range]
 
     def _get_extremal_date(self, year, order):
         return self.get_date(self._collections[year].find().sort(self.doc_id, order).limit(1)[0])
@@ -82,3 +91,8 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         year = self._get_doc_year({self.doc_id : doc_id})
         query = self._build_tag_update_query(tag_ids, operation)
         return self._collections[year].update({self.doc_id : doc_id}, query)
+
+    def _parse_year_range(self, **kwargs):
+        min_year = dtparser.parse(kwargs.get('min_date', ["{}-01-01".format(self._min_year)])[0]).year
+        max_year = dtparser.parse(kwargs.get('max_date', ["{}-01-01".format(self._max_year)])[0]).year
+        return (min_year, max_year)
