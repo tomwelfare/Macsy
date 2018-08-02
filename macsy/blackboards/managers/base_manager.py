@@ -4,10 +4,12 @@ codec_options = DEFAULT_CODEC_OPTIONS.with_options(unicode_decode_error_handler=
 
 class BaseManager():
 
-    def __init__(self, parent, suffix):
+    def __init__(self, blackboard, suffix):
+        from macsy.blackboards.utils import query_builder
         self.checkCaller()
-        self._parent = parent
-        self._collection = self._parent._db.get_collection(self._parent._name + suffix, codec_options=codec_options)
+        self._blackboard = blackboard
+        self._query_builder = query_builder.QueryBuilder(blackboard)
+        self._collection = self._blackboard._db.get_collection(self._blackboard._name + suffix, codec_options=codec_options)
 
     def checkCaller(self):
         from macsy.blackboards import blackboard, date_based_blackboard

@@ -12,8 +12,8 @@ class CounterManager(base_manager.BaseManager):
     counter_tag = "tag_counter"
     counter_doc = "doc_counter"
 
-    def __init__(self, parent):
-        super().__init__(parent, CounterManager.counter_suffix)
+    def __init__(self, blackboard):
+        super().__init__(blackboard, CounterManager.counter_suffix)
 
     def get_next_id_and_increment(self, field):
         next_id = self.get_next_id(field)
