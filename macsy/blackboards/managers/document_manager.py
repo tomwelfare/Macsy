@@ -42,7 +42,8 @@ class DocumentManager(base_manager.BaseManager):
     def update_document_tags(self, ids, operations):
         doc_id, tag_id = ids
         update = self._get_document_tag_update(tag_id, operations)
-        return self._collection.update({self.doc_id : doc_id}, update)
+        response = self._collection.update({self.doc_id : doc_id}, update)
+        return doc_id if response['updatedExisting'] else None
 
     # Should check for hash values, not just on id?
     def _doc_exists(self, doc):

@@ -1,4 +1,11 @@
 class BlackboardCursor:
+    '''Cursor object for iterating through results pulled from the database.
+
+    Example:
+        >>> cursor = blackboard.find()
+        >>> for doc in cursor:
+        >>> ... print(doc)
+    '''
 
     def __init__(self, cursors_and_max_docs):
         cursors, max_docs = cursors_and_max_docs

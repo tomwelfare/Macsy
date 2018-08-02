@@ -56,7 +56,8 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         doc_id, tag_id = ids
         year = self._get_doc_year({self.doc_id : doc_id})
         update = self._get_document_tag_update(tag_id, operations)
-        return self._collections[year].update({self.doc_id : doc_id}, update)
+        response = self._collections[year].update({self.doc_id : doc_id}, update)
+        return doc_id if response['updatedExisting'] else None
 
     def get_date(self, doc):
         if self.doc_id in doc and isinstance(doc[self.doc_id], ObjectId):

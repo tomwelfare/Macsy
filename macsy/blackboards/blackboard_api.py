@@ -1,4 +1,5 @@
 import urllib.parse
+from functools import wraps
 from pymongo import MongoClient
 from macsy.blackboards import blackboard, date_based_blackboard
 from macsy.blackboards.managers import tag_manager, counter_manager
@@ -9,6 +10,7 @@ DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
 
 def validate_blackboard_name(func):
     ''' Validate the blackboard_name, checking if it contains forbidden characters.'''
+    @wraps(func)
     def wrap(*args, **kwargs):
         if any(x in args[1] for x in r" \$_"):
             raise ValueError('Forbidden characters in blackboard name ("$","_"," ")')
@@ -17,6 +19,7 @@ def validate_blackboard_name(func):
 
 def validate_settings(func):
     ''' Validate the settings, checking if the right fields are present.'''
+    @wraps(func)
     def wrap(*args, **kwargs):
         required_fields = BlackboardAPI._setting_fields.values()
         if len(set(required_fields).intersection(args[1])) is not len(required_fields):
@@ -25,7 +28,15 @@ def validate_settings(func):
     return wrap
 
 class BlackboardAPI():
-    '''Entry object for loading and deleting blackboards.'''
+    '''Entry object for loading and deleting blackboards.
+
+    Example:
+        >>> settings = {'username' : 'user', 'password' : 'password', 'dbname' : 'database', 'dburl' : 'localhost:37017'}
+        >>> api = blackboard_api.BlackboardAPI(settings)
+        >>> blackboards_available = api.get_blackboard_names()
+        >>> blackboard = api.load_blackboard('ARTICLE')
+        >>> blackboard.count()
+    '''
 
     _setting_fields = {'username' : 'user', 'password' : 'password', 'dbname' : 'dbname', 'dburl' : 'dburl'}
     _protected_names = ['ARTICLE', 'FEED', 'OUTLET', 'TWEET', 'URL', 'MODULE', 'MODULE_RUN', 'Newspapers', 'AmericanNews']
