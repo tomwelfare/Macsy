@@ -1,3 +1,4 @@
+from collections import namedtuple
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
@@ -11,19 +12,19 @@ class QueryBuilder():
         self._blackboard = blackboard
 
     def build_document_query(self, **kwargs):
-        qw = {'tags' : ('$all', self._build_tag_query, {}), 
-            'without_tags' : ('$nin', self._build_tag_query, {}), 
-            'fields' : (True, self._build_field_query, {}), 
-            'without_fields' : (False, self._build_field_query, {}), 
-            'min_date' : ('$gte', self._build_date_query, None), 
-            'max_date' : ('$lt', self._build_date_query, None)}
+        Executor = namedtuple('Executor', ['operation','function'])
+        executors = {'tags' : Executor('$all', self._build_tag_query), 
+            'without_tags' : Executor('$nin', self._build_tag_query), 
+            'fields' : Executor(True, self._build_field_query), 
+            'without_fields' : Executor(False, self._build_field_query), 
+            'min_date' : Executor('$gte', self._build_date_query), 
+            'max_date' : Executor('$lt', self._build_date_query)}
+        existing = {key : value for key, value in kwargs.items() if key in set(kwargs).intersection(executors) and self._argument_is_list(value)}
         query = {}
-        for k in set(kwargs).intersection(qw):
-            for d in kwargs.get(k,qw[k][2]):
-                assert isinstance(kwargs.get(k,qw[k][2]), list), \
-                'Argument needs to be a list: {}'.format(kwargs.get(k, qw[k][2]))
-                key, value = qw[k][1]((query, d, qw[k][0]))
-                query[key] = value
+        for keyword, value_list in existing.items():
+            for value in value_list:
+                key, val = executors[keyword].function((query, value, executors[keyword].operation))
+                query[key] = val
         return query
 
     def build_document_update(self, doc_id, updated_fields):
@@ -56,12 +57,14 @@ class QueryBuilder():
         tag_m = self._blackboard.tag_manager
         doc_m = self._blackboard.document_manager
         full_tag = tag_m.get_canonical_tag(tag)
-        field = doc_m.doc_control_tags if (tag_m.tag_control in full_tag \
-            and full_tag[tag_m.tag_control]) else doc_m.doc_tags
+
+        field = doc_m.doc_control_tags if (tag_m.tag_control in full_tag and full_tag[tag_m.tag_control]) else doc_m.doc_tags
         if field in query and "$exists" in query[field]: del query[field]
+
         q = query.get(field, {value : [int(full_tag[tag_m.tag_id])]})
         if int(full_tag[tag_m.tag_id]) not in q[value]:
             q[value].append(int(full_tag[tag_m.tag_id]))
+
         return (field, q)
 
     def _build_field_query(self, qfv):
@@ -74,3 +77,8 @@ class QueryBuilder():
 
     def _listify(self, obj):
         return obj if isinstance(obj,list) else [obj]
+
+    def _argument_is_list(self, argument):
+        if not isinstance(argument,list):
+            raise ValueError('Argument needs to be a list: {}'.format(argument))
+        return True

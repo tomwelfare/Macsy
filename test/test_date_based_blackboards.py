@@ -49,6 +49,7 @@ class TestDateBasedBlackboards(unittest.TestCase):
         with self.assertRaises(ValueError): self.bb.find(tags = [1, 13])
         with self.assertRaises(ValueError): self.bb.find(tags = ['Tag_4', 13])
         with self.assertRaises(ValueError): self.bb.find(tags = ['Tag_4', -5])
+        with self.assertRaises(ValueError): self.bb.find(min_date='01-01-2016')
 
         self.assertEqual(len([x for x in self.bb.find(tags = ['FOR>Tag_11', 12], max = 5)]), 5)
         self.assertEqual(len(self.bb.find(tags = ['FOR>Tag_11', 12], max = 5)), 5)
