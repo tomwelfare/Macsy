@@ -1,5 +1,4 @@
-import pymongo
-#from bson.objectid import ObjectId
+from pymongo import DESCENDING
 from macsy.blackboards.managers import base_manager, tag_manager
 TagManager = tag_manager.TagManager
 
@@ -19,7 +18,7 @@ class DocumentManager(base_manager.BaseManager):
         
     def find(self, **kwargs):
         query = kwargs.get('query', self._query_builder.build_document_query(**kwargs))
-        sort = [(self.doc_id, kwargs.pop('sort', pymongo.DESCENDING))]
+        sort = [(self.doc_id, kwargs.pop('sort', DESCENDING))]
         max_docs = kwargs.pop('max', 0)
         return (self._collection.find(query).sort(sort).limit(max_docs), max_docs)
 
@@ -42,8 +41,7 @@ class DocumentManager(base_manager.BaseManager):
 
     def update_document_tags(self, ids, operations):
         doc_id, tag_id = ids
-        update = self._query_builder.build_tags_update_query(tag_id, operations[0]) if isinstance(tag_id, list) else \
-            self._query_builder.build_tag_update_query(tag_id, operations[1])
+        update = self._get_document_tag_update(tag_id, operations)
         return self._collection.update({self.doc_id : doc_id}, update)
 
     # Should check for hash values, not just on id?
@@ -58,3 +56,7 @@ class DocumentManager(base_manager.BaseManager):
     def _ensure_array_fields(self, doc):
         missing_tags = {field : [] for field in self.array_fields if field not in doc}
         doc.update(missing_tags)
+
+    def _get_document_tag_update(self, tag_id, operations):
+        return self._query_builder.build_tags_update_query(tag_id, operations[0]) if isinstance(tag_id, list) else \
+            self._query_builder.build_tag_update_query(tag_id, operations[1])

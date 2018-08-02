@@ -13,16 +13,13 @@ class QueryBuilder():
 
     def build_document_query(self, **kwargs):
         Executor = namedtuple('Executor', ['operation','function'])
-        executors = {'tags' : Executor('$all', self._build_tag_query), 
-            'without_tags' : Executor('$nin', self._build_tag_query), 
-            'fields' : Executor(True, self._build_field_query), 
-            'without_fields' : Executor(False, self._build_field_query), 
-            'min_date' : Executor('$gte', self._build_date_query), 
-            'max_date' : Executor('$lt', self._build_date_query)}
+        executors = {'tags' : Executor('$all', self._build_tag_query), 'without_tags' : Executor('$nin', self._build_tag_query), 
+            'fields' : Executor(True, self._build_field_query), 'without_fields' : Executor(False, self._build_field_query), 
+            'min_date' : Executor('$gte', self._build_date_query), 'max_date' : Executor('$lt', self._build_date_query)}
         existing = {key : value for key, value in kwargs.items() if key in set(kwargs).intersection(executors) and self._argument_is_list(value)}
         query = {}
-        for keyword, value_list in existing.items():
-            for value in value_list:
+        for keyword, values in existing.items():
+            for value in values:
                 key, val = executors[keyword].function((query, value, executors[keyword].operation))
                 query[key] = val
         return query

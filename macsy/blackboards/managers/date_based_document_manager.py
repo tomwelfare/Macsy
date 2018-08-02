@@ -55,8 +55,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
     def update_document_tags(self, ids, operations):
         doc_id, tag_id = ids
         year = self._get_doc_year({self.doc_id : doc_id})
-        update = self._query_builder.build_tags_update_query(tag_id, operations[0]) if isinstance(tag_id, list) else \
-            self._query_builder.build_tag_update_query(tag_id, operations[1])
+        update = self._get_document_tag_update(tag_id, operations)
         return self._collections[year].update({self.doc_id : doc_id}, update)
 
     def get_date(self, doc):
@@ -82,7 +81,7 @@ class DateBasedDocumentManager(document_manager.DocumentManager):
         return self.get_date(doc).year
 
     def _parse_year_range(self, **kwargs):
-        date_str = "{}-01-01"
-        min_date = kwargs.get('min_date', [date_str.format(self._min_year)])
-        max_date = kwargs.get('max_date', [date_str.format(self._max_year)])
+        date = "{}-01-01"
+        min_date = kwargs.get('min_date', [date.format(self._min_year)])
+        max_date = kwargs.get('max_date', [date.format(self._max_year)])
         return (dtparser.parse(min_date[0]).year, dtparser.parse(max_date[0]).year)

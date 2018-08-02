@@ -25,16 +25,27 @@ def validate_settings(func):
     return wrap
 
 class BlackboardAPI():
+    '''Entry object for loading and deleting blackboards.'''
 
-    _setting_fields = {'username' : 'user', 'password' : 'password', \
-        'dbname' : 'dbname', 'dburl' : 'dburl'}
-    _protected_names = ['ARTICLE', 'FEED', 'OUTLET', 'TWEET', 'URL', \
-        'MODULE', 'MODULE_RUN', 'Newspapers', 'AmericanNews']
+    _setting_fields = {'username' : 'user', 'password' : 'password', 'dbname' : 'dbname', 'dburl' : 'dburl'}
+    _protected_names = ['ARTICLE', 'FEED', 'OUTLET', 'TWEET', 'URL', 'MODULE', 'MODULE_RUN', 'Newspapers', 'AmericanNews']
     _admin_user = 'dbadmin'
     _salt = ')Djmsn)p'
 
     @validate_settings
     def __init__(self, settings, MongoClient=MongoClient):
+        '''Constructor for the BlackboardAPI.
+
+        Args:
+            settings (dict): dictionary containing the database settings to use, including
+                username, password, dbname (database name) and dburl (database url).
+            MongoClient (MongoClient, optional): optional MongoClient to use, generally
+                useful for mocking, and testing the blackboards without connecting to a real
+                database.
+
+        Raises:
+            ValueError: If incorrect or incomplete database settings are provided.
+        '''
         self.__username = urllib.parse.quote_plus(settings[
             BlackboardAPI._setting_fields.get('username')])
         self.__password = urllib.parse.quote_plus(settings[
@@ -45,10 +56,14 @@ class BlackboardAPI():
             BlackboardAPI._setting_fields.get('dburl')].replace('mongodb://', '').strip('/')
         self.__admin_mode = self._check_admin_attempt(settings)
         self.__client = MongoClient(self._get_connection_string(settings))
-
         self.__db = self.__client[self.__dbname]
 
     def get_blackboard_names(self):
+        '''Retrieve a list of all available blackboard names.
+
+        Returns:
+            List[str]: names of available blackboards.
+        '''
         suffix_len = len(CounterManager.counter_suffix)
         collections = self.__db.collection_names(include_system_collections=False)
         blackboards = (coll[0:-suffix_len] for coll in collections if coll.endswith(CounterManager.counter_suffix))
@@ -58,6 +73,17 @@ class BlackboardAPI():
 
     @validate_blackboard_name
     def blackboard_exists(self, blackboard_name):
+        '''Check by name if a blackboard exists.
+
+        Args:
+            blackboard_name (str): the blackboard name to check for existence.
+
+        Returns:
+            bool: True if blackboard exists, False otherwise.
+
+        Raises:
+            ValueError: If `blackboard_name` contains forbidden characters.
+        '''
         collection = self.__db[blackboard_name + CounterManager.counter_suffix]
         result = collection.find_one({CounterManager.counter_id : CounterManager.counter_type})
         if result:
@@ -66,6 +92,18 @@ class BlackboardAPI():
 
     @validate_blackboard_name
     def load_blackboard(self, blackboard_name, date_based=None):
+        '''Load or create (if it doesn't exist) a blackboard by name and return it.
+
+        Args:
+            blackboard_name (str): the name of the blackboard to load or create.
+            date_based (bool, optional): whether or not the blackboard should be date-based or not.
+
+        Returns:
+            Blackboard object
+
+        Raises:
+            ValueError: If `blackboard_name` contains forbidden characters.
+        '''
         settings = (self.__db, blackboard_name, self.__admin_mode)
         return DateBasedBlackboard(settings) \
             if self.get_blackboard_type(blackboard_name, date_based) == \
@@ -73,7 +111,20 @@ class BlackboardAPI():
 
     @validate_blackboard_name
     def drop_blackboard(self, blackboard_name):
-        ''' Drop a blackboard from the database, use with caution!'''
+        '''Drop (delete) a blackboard from the database, use with caution!!
+
+
+        Protected blackboards require admin permissions in order to remove them,
+        to guard against the accidental deletion of the important data in the database.
+
+        Args:
+            blackboard_name (str): the name of the blackboard to delete.
+
+        Raises:
+            ValueError: If `blackboard_name` contains forbidden characters.
+            PermissionError: If `blackboard_name` is a protected blackboard, and the user
+                does not have admin privileges.
+        '''
         protected = blackboard_name.upper() in BlackboardAPI._protected_names
         if protected and not self.__admin_mode:
             raise PermissionError(
@@ -87,6 +138,18 @@ class BlackboardAPI():
 
     @validate_blackboard_name
     def get_blackboard_type(self, blackboard_name, date_based=None):
+        '''Get the type of the blackboard and return it as a string.
+
+        Args:
+            blackboard_name (str): the name of the blackboard to check.
+            date_based (bool, optional): whether the blackboard is date-based or not.
+
+        Returns:
+            str: 'DATEBASED' if blackboard is date-based, 'STANDARD' otherwise.
+
+        Raises:
+            ValueError: If `blackboard_name` contains forbidden characters.
+        '''
         collection = self.__db[blackboard_name + CounterManager.counter_suffix]
         result = collection.find_one({CounterManager.counter_id : CounterManager.counter_type})
         if result is not None:
@@ -98,14 +161,12 @@ class BlackboardAPI():
 
     @validate_settings
     def _get_connection_string(self, settings):
-        ''' Get the connection string details to be passed to the MongoClient.'''
         settings = (self.__username, self.__password, \
             self.__dburl, self.__dbname, '')#'?readPreference=secondary')
         return 'mongodb://%s:%s@%s/%s%s' % settings
 
     @validate_settings
     def _check_admin_attempt(self, settings):
-        ''' Check if the user has rights to run in admin_mode, and salt their password if not'''
         if self.__username != BlackboardAPI._admin_user:
             self.__password += str(BlackboardAPI._salt)
             return False
