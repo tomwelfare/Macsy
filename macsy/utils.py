@@ -2,9 +2,7 @@ from collections import namedtuple
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-from macsy.blackboards.managers import tag_manager, document_manager
-TagManager = tag_manager.TagManager
-DocumentManager = document_manager.DocumentManager
+from macsy.managers import TagManager, DocumentManager
 
 class QueryBuilder():
 

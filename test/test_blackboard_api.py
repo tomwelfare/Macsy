@@ -11,13 +11,8 @@ from test import mock_data_generator
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-from macsy.blackboards import blackboard_api, blackboard, date_based_blackboard
-from macsy.blackboards.managers import counter_manager
-
-CounterManager = counter_manager.CounterManager
-BlackboardAPI = blackboard_api.BlackboardAPI
-Blackboard = blackboard.Blackboard
-DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
+from macsy.blackboards import BlackboardAPI, Blackboard, DateBasedBlackboard
+from macsy.managers import CounterManager
 
 class TestBlackboardAPI(unittest.TestCase):
 

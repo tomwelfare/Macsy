@@ -11,14 +11,8 @@ from test import mock_data_generator
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-from macsy.blackboards import blackboard_api, date_based_blackboard
-from macsy.blackboards.managers import tag_manager, date_based_document_manager, counter_manager
-
-BlackboardAPI = blackboard_api.BlackboardAPI
-DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
-TagManager = tag_manager.TagManager
-DateBasedDocumentManager = date_based_document_manager.DateBasedDocumentManager
-CounterManager = counter_manager.CounterManager
+from macsy.blackboards import BlackboardAPI, DateBasedBlackboard
+from macsy.managers import TagManager, DocumentManager, DateBasedDocumentManager, CounterManager
 
 class TestDateBasedBlackboards(unittest.TestCase):
 
@@ -117,13 +111,13 @@ class TestDateBasedBlackboards(unittest.TestCase):
     def test_remove_tag(self):
         obj_id = self.bb.insert({'hasTags' : True, 'Tg' : [1, 2, 3, 4, 5]})
         result = self.bb.remove_tag(obj_id, 3)
-        self.assertEqual(result['err'], None)
+        self.assertEqual(result, obj_id)
         self.assertEqual([x for x in self.bb.find(tags=[1, 2, 4, 5])][0][DateBasedDocumentManager.doc_id], obj_id)
         result = self.bb.remove_tag(obj_id, [1,5])
-        self.assertEqual(result['err'], None)
+        self.assertEqual(result, obj_id)
         self.assertEqual([x for x in self.bb.find(query={'Tg' : [2, 4]})][0][DateBasedDocumentManager.doc_id], obj_id)
         result = self.bb.remove_tag(obj_id, [2,8])
-        self.assertEqual(result['err'], None)
+        self.assertEqual(result, obj_id)
         self.assertEqual([x for x in self.bb.find(query={'Tg' : [4]})][0][DateBasedDocumentManager.doc_id], obj_id)
 
     def test_insert_tag(self):
@@ -149,6 +143,7 @@ class TestDateBasedBlackboards(unittest.TestCase):
         self.assertEqual(self.bb.get_tag(1)['DInh'], 1)
         self.bb.update_tag(1, "FOR>Tag_1_Renamed", True)
         self.assertEqual(self.bb.get_tag(1)['Ctrl'], 1)
+        with self.assertRaises(ValueError): self.bb.update_tag(3,"FOR>Tag_1_Renamed")
 
     def test_delete_tag(self):
         with self.assertRaises(PermissionError): self.bb.delete_tag(1)

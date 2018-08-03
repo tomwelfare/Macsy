@@ -1,5 +1,8 @@
+'''Cursors are used for iterating over database query results.'''
+
 class BlackboardCursor:
     '''Cursor object for iterating through results pulled from the database.
+    Returned when calling :meth:`find()<macsy.blackboards.Blackboard.find>` on a :class:`Blackboard<macsy.blackboards.Blackboard>`.
 
     Example:
         >>> cursor = blackboard.find()

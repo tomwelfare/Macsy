@@ -11,13 +11,8 @@ from test import mock_data_generator
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-from macsy.blackboards import blackboard_api
-from macsy.blackboards.managers import tag_manager, document_manager, counter_manager
-
-BlackboardAPI = blackboard_api.BlackboardAPI
-TagManager = tag_manager.TagManager
-DocumentManager = document_manager.DocumentManager
-CounterManager = counter_manager.CounterManager
+from macsy.blackboards import BlackboardAPI
+from macsy.managers import TagManager, DocumentManager, CounterManager
 
 class TestBlackboards(unittest.TestCase):
 
@@ -120,13 +115,13 @@ class TestBlackboards(unittest.TestCase):
     def test_remove_tag(self):
         obj_id = self.bb.insert({'hasTags' : True, 'Tg' : [1, 2, 3, 4, 5]})
         result = self.bb.remove_tag(obj_id, 3)
-        self.assertEqual(result['err'], None)
+        self.assertEqual(result, obj_id)
         self.assertEqual([x for x in self.bb.find(tags=[1, 2, 4, 5])][0][DocumentManager.doc_id], obj_id)
         result = self.bb.remove_tag(obj_id, [1,5])
-        self.assertEqual(result['err'], None)
+        self.assertEqual(result, obj_id)
         self.assertEqual([x for x in self.bb.find(query={'Tg' : [2, 4]})][0][DocumentManager.doc_id], obj_id)
         result = self.bb.remove_tag(obj_id, [2,8])
-        self.assertEqual(result['err'], None)
+        self.assertEqual(result, obj_id)
         self.assertEqual([x for x in self.bb.find(query={'Tg' : [4]}, sort=1)][1][DocumentManager.doc_id], obj_id)
         self.assertEqual([x for x in self.bb.find(query={'Tg' : [4]}, sort=-1)][0][DocumentManager.doc_id], obj_id)
 
@@ -155,6 +150,7 @@ class TestBlackboards(unittest.TestCase):
         self.assertEqual(self.bb.get_tag(1)['DInh'], 1)
         self.bb.update_tag(1, "FOR>Tag_1_Renamed", True)
         self.assertEqual(self.bb.get_tag(1)['Ctrl'], 1)
+        with self.assertRaises(ValueError): self.bb.update_tag(3,"FOR>Tag_1_Renamed")
 
     def test_delete_tag(self):
         with self.assertRaises(PermissionError): self.bb.delete_tag(1)

@@ -5,15 +5,8 @@ home = '/'.join(os.path.abspath(__file__).split('/')[0:-2])
 sys.path.insert(0, home)
 from datetime import datetime
 from bson.objectid import ObjectId
-from macsy.blackboards import blackboard_api, blackboard, date_based_blackboard
-from macsy.blackboards.managers import tag_manager, document_manager, counter_manager
-
-BlackboardAPI = blackboard_api.BlackboardAPI
-Blackboard = blackboard.Blackboard
-DateBasedBlackboard = date_based_blackboard.DateBasedBlackboard
-TagManager = tag_manager.TagManager
-DocumentManager = document_manager.DocumentManager
-CounterManager = counter_manager.CounterManager
+from macsy.blackboards import BlackboardAPI, Blackboard, DateBasedBlackboard
+from macsy.managers import TagManager, DocumentManager, CounterManager
 
 def mock_client(*args, **kwargs):
     client = mongomock.MongoClient(*args, **kwargs)
