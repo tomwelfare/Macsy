@@ -61,17 +61,11 @@ class CounterManager(BaseManager):
 
     def get_hash_field(self):
         result = self._collection.find_one({CounterManager.counter_id : CounterManager.counter_hash})
-        if result is not None:
-            return result[CounterManager.counter_hash]
-        # if there is no hash field defined, fallback to using HSH as a default.
-        return 'HSH'
+        return 'HSH' if result is None else result[CounterManager.counter_hash]
 
     def get_hash_components(self):
         result = self._collection.find_one({CounterManager.counter_id : CounterManager.counter_hash})
-        if result is not None:
-            return result[CounterManager.counter_hash_fields]
-        # if there are no hash components defined, fallback to using the id field.
-        return [self._blackboard.document_manager.doc_id]
+        return [self._blackboard.document_manager.doc_id] if result is None else result[CounterManager.counter_hash_fields]
 
     def _increment_next_id(self, current_id, field):
         next_id = {"$set" : {field : int(current_id+1)}}
@@ -234,11 +228,8 @@ class DocumentManager(BaseManager):
             collection.create_index(index, background=True)
 
     def _find_missing_indexes(self, required, existing):
-        if existing is not None:
-            for index in existing:
-                if existing['key'] in required:
-                    required.pop(existing['key'])
-        return required
+        not_required = [index['key'] for index in existing if index['key'] in required]
+        return set(required).difference(not_required)
 
 class DateBasedDocumentManager(DocumentManager):
 
