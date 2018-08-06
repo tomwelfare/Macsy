@@ -1,19 +1,8 @@
 '''Blackboards are objects which provide an interface to data stored in the database.'''
 
-from functools import wraps, partial
+from macsy.utils import check_admin
 from macsy.cursors import BlackboardCursor
 from macsy.managers import TagManager, DocumentManager, DateBasedDocumentManager, CounterManager
-
-def check_admin(error):
-    '''Decorator to validate the if the user is admin or not.'''
-    def dec(func):
-        @wraps(func)
-        def wrap(*args, **kwargs):
-            if not args[0].admin_mode:
-                raise PermissionError(error)
-            return func(*args, **kwargs)
-        return wrap
-    return dec
 
 class Blackboard():
     '''Blackboard object that acts as an interface for retrieving and inserting data from a standard blackboard.
@@ -35,9 +24,9 @@ class Blackboard():
             >>> blackboard = api.load_blackboard('FEED')
         '''
         self._db, self._name, self.admin_mode = settings
+        self.counter_manager = CounterManager(self)
         self.document_manager = DocumentManager(self)
         self.tag_manager = TagManager(self)
-        self.counter_manager = CounterManager(self)
 
     def count(self, **kwargs):
         '''Count the number of documents in the blackboard.

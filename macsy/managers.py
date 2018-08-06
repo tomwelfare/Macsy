@@ -1,5 +1,6 @@
 import inspect
 import pymongo
+from macsy.utils import suppress_print_if_mocking
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson import ObjectId
@@ -10,12 +11,12 @@ class BaseManager():
 
     def __init__(self, blackboard, suffix):
         from macsy.utils import QueryBuilder
-        self.checkCaller()
+        self.check_caller()
         self._blackboard = blackboard
         self._query_builder = QueryBuilder(blackboard)
         self._collection = self._blackboard._db.get_collection(self._blackboard._name + suffix, codec_options=codec_options)
 
-    def checkCaller(self):
+    def check_caller(self):
         from macsy.blackboards import Blackboard, DateBasedBlackboard
         stack = inspect.stack()
         depth = 4 if 'DateBased' in self.__class__.__name__ else 3
@@ -29,11 +30,14 @@ class CounterManager(BaseManager):
     counter_suffix = '_COUNTER'
     counter_id = '_id'
     counter_next = 'NEXT_ID'
+    counter_indexes = 'INDEXES'
+    counter_hash = 'HASH_FIELD'
     counter_type = 'BLACKBOARD_TYPE'
     counter_type_standard = 'STANDARD'
     counter_type_date_based = 'DATE_BASED'
     counter_tag = "tag_counter"
     counter_doc = "doc_counter"
+    counter_hash_fields = 'fields'
 
     def __init__(self, blackboard):
         super().__init__(blackboard, CounterManager.counter_suffix)
@@ -46,6 +50,28 @@ class CounterManager(BaseManager):
     def get_next_id(self, field):
         result = self._collection.find_one({CounterManager.counter_id : CounterManager.counter_next})
         return result[field]
+
+    def get_required_indexes(self):
+        result = self._collection.find_one({CounterManager.counter_id : CounterManager.counter_indexes})
+        if result is not None:
+            return result[CounterManager.counter_indexes]
+        print('Warning: No required indexes defined for the Blackboard.')
+        # fallback to ensure that ids are indexed.
+        return [{self._blackboard.document_manager.doc_id : 1}]
+
+    def get_hash_field(self):
+        result = self._collection.find_one({CounterManager.counter_id : CounterManager.counter_hash})
+        if result is not None:
+            return result[CounterManager.counter_hash]
+        # if there is no hash field defined, fallback to using HSH as a default.
+        return 'HSH'
+
+    def get_hash_components(self):
+        result = self._collection.find_one({CounterManager.counter_id : CounterManager.counter_hash})
+        if result is not None:
+            return result[CounterManager.counter_hash_fields]
+        # if there are no hash components defined, fallback to using the id field.
+        return [self._blackboard.document_manager.doc_id]
 
     def _increment_next_id(self, current_id, field):
         next_id = {"$set" : {field : int(current_id+1)}}
@@ -135,6 +161,7 @@ class DocumentManager(BaseManager):
         self.doc_id = DocumentManager.doc_id
         self.doc_tags = DocumentManager.doc_tags
         self.doc_control_tags = DocumentManager.doc_control_tags
+        self._ensure_indexes(self._collection)
         
     def find(self, **kwargs):
         query = kwargs.get('query', self._query_builder.build_document_query(**kwargs))
@@ -149,7 +176,12 @@ class DocumentManager(BaseManager):
     def insert(self, doc):
         doc[self.doc_id] = self._get_or_generate_id(doc)
         self._ensure_array_fields(doc)
-        return self.update(doc[self.doc_id], doc) if self._doc_exists(doc) else self._collection.insert(doc)
+        exists, ident = self._doc_exists_and_id(doc)
+        if exists:
+            return self.update(ident, doc)
+        else:
+            doc[self._blackboard.counter_manager.get_hash_field()] = self._get_or_generate_hash(doc)
+            return self._collection.insert(doc)
 
     def update(self, doc_id, updated_fields):
         update = self._query_builder.build_document_update(doc_id, updated_fields)
@@ -165,9 +197,19 @@ class DocumentManager(BaseManager):
         response = self._collection.update({self.doc_id : doc_id}, update)
         return doc_id if response['updatedExisting'] else None
 
-    # Should check for hash values, not just on id?
-    def _doc_exists(self, doc):
-        return bool(self.count(query={self.doc_id : doc[self.doc_id]}))
+    def _doc_exists_and_id(self, doc):
+        hsh = self._get_or_generate_hash(doc)
+        results = [x for x in self._collection.find({self._blackboard.counter_manager.get_hash_field() : hsh})]
+        return (True, results[0][self.doc_id]) if results else (False, None)
+
+    def _get_or_generate_hash(self, doc):
+        from macsy import utils
+        hash_field = self._blackboard.counter_manager.get_hash_field()
+        if hash_field in doc:
+            return doc[hash_field]
+        components = self._blackboard.counter_manager.get_hash_components()
+        hsh = utils.java_string_hashcode("".join([str(doc[x]) for x in components if x in doc]))
+        return hsh
 
     def _get_or_generate_id(self, doc):
         if self.doc_id not in doc:
@@ -181,6 +223,22 @@ class DocumentManager(BaseManager):
     def _get_document_tag_update(self, tag_id, operations):
         return self._query_builder.build_tags_update_query(tag_id, operations[0]) if isinstance(tag_id, list) else \
             self._query_builder.build_tag_update_query(tag_id, operations[1])
+
+    @suppress_print_if_mocking
+    def _ensure_indexes(self, collection):
+        required = self._blackboard.counter_manager.get_required_indexes()
+        existing = collection.index_information()
+        missing = self._find_missing_indexes(required, existing)
+        for index in missing:
+            print('Building {} index for {} in the background.'.format(index, collection.name))
+            collection.create_index(index, background=True)
+
+    def _find_missing_indexes(self, required, existing):
+        if existing is not None:
+            for index in existing:
+                if existing['key'] in required:
+                    required.pop(existing['key'])
+        return required
 
 class DateBasedDocumentManager(DocumentManager):
 
@@ -197,6 +255,8 @@ class DateBasedDocumentManager(DocumentManager):
         self._collections = {int(year): self._blackboard._db.get_collection(coll,codec_options=codec_options) for year, coll in colls if year.isdigit()}
         self._max_year = max(self._collections.keys())
         self._min_year = min(self._collections.keys())
+        for coll in self._collections.values():
+            self._ensure_indexes(coll)
 
     def find(self, **kwargs):
         query = kwargs.get('query', self._query_builder.build_document_query(**kwargs))
@@ -216,7 +276,12 @@ class DateBasedDocumentManager(DocumentManager):
         doc[self.doc_id] = self._get_or_generate_id(doc)
         self._ensure_array_fields(doc)
         year = self._get_doc_year(doc)
-        return self.update(doc[self.doc_id], doc) if self._doc_exists(doc) else self._collections[year].insert(doc)
+        exists, ident = self._doc_exists_and_id(doc)
+        if exists:
+            return self.update(ident, doc)
+        else:
+            doc[self._blackboard.counter_manager.get_hash_field()] = self._get_or_generate_hash(doc)
+            return self._collections[year].insert(doc)
 
     def update(self, doc_id, updated_fields):
         update = self._query_builder.build_document_update(doc_id, updated_fields)
@@ -245,6 +310,11 @@ class DateBasedDocumentManager(DocumentManager):
 
     def get_latest_date(self):
         return self._get_extremal_date(self._max_year, pymongo.DESCENDING)
+
+    def _doc_exists_and_id(self, doc):
+        hsh = self._get_or_generate_hash(doc)
+        results = [x for year in range(self._max_year, self._min_year-1, pymongo.DESCENDING) for x in self._collections[year].find({self._blackboard.counter_manager.get_hash_field() : hsh})]
+        return (True, results[0][self.doc_id]) if results else (False, None)
 
     def _get_or_generate_id(self, doc):
         if self.doc_id not in doc:

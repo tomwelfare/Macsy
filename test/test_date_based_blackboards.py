@@ -52,16 +52,19 @@ class TestDateBasedBlackboards(unittest.TestCase):
         self.assertEqual(len(self.bb.find(min_date=['01-01-2016'], tags = ['FOR>Tag_11', 12], max = 2)), 2)
 
     def test_insert(self):
+        from macsy import utils
         # Generate a doc, check # of docs, insert it, check it's incremented
         obj_id = ObjectId.from_datetime(dtparser.parse('21-10-2017'))
+        hsh = utils.java_string_hashcode('515TitleDescription')
         expected = 11
         self.assertEqual(self.bb.count(), expected-1)
-        self.assertEqual(self.bb.insert({DateBasedDocumentManager.doc_id : obj_id, 'Overwritten' : False, 'Inserted' : True, 'Tg' : [1, 2, 3]}), obj_id)
+        self.assertEqual(self.bb.insert({DateBasedDocumentManager.doc_id : obj_id, 'HSH' : hsh, 'oID' : 515, 'T' : 'Title', 'D' : 'Description', 'Overwritten' : False, 'Inserted' : True, 'Tg' : [1, 2, 3]}), obj_id)
         self.assertEqual(self.bb.count(), expected)
         self.assertEqual([x for x in self.bb.find(query={'Inserted' : True})][0]['_id'], obj_id)
         
+        
         # Try to insert it again
-        self.assertEqual(self.bb.insert({DateBasedDocumentManager.doc_id : obj_id, 'Overwritten' : True, 'Updated' : True, 'Tg' : [4, 5]}), obj_id)
+        self.assertEqual(self.bb.insert({DateBasedDocumentManager.doc_id : obj_id, 'oID' : 515, 'T' : 'Title', 'D' : 'Description', 'Overwritten' : True, 'Updated' : True, 'Tg' : [4, 5]}), obj_id)
         self.assertEqual(self.bb.count(), expected)
         self.assertEqual([x for x in self.bb.find(query={'Updated' : True})][0]['_id'], obj_id)
         self.assertEqual(self.bb.count(query={'Overwritten' : False}), 0)

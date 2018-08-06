@@ -1,6 +1,6 @@
 import sys
 import os.path
-import mongomock 
+import mongomock
 home = '/'.join(os.path.abspath(__file__).split('/')[0:-2])
 sys.path.insert(0, home)
 from datetime import datetime
@@ -40,12 +40,18 @@ def generate_date_based_blackboard(db, blackboard_name):
     counter_coll = db[blackboard_name + CounterManager.counter_suffix]
     counter_coll.insert({"_id" : CounterManager.counter_type, CounterManager.counter_type : CounterManager.counter_type_date_based})
     counter_coll.insert({"_id" : CounterManager.counter_next, CounterManager.counter_tag : tags_coll.count() + 1})
+    counter_coll.insert({"_id" : CounterManager.counter_hash, CounterManager.counter_hash : 'HSH', CounterManager.counter_hash_fields : ['oID', 'T', 'D']})
+    counter_coll.insert({"_id" : CounterManager.counter_indexes, CounterManager.counter_indexes : [{"_id" : 1},{"oID" : 1, "_id" : 1}, {"Tg" : 1, "_id" : 1, "oID" : 1}, {"HSH" : 1}, { "Fds" : 1, "_id" : 1}, {"aID" : 1}, {"FOR" : 1, "_id" : 1}, {"TrOf" : 1}, {"Tg" : 1, "_id" : 1}]})
 
     # Generate date_based collections
     document_colls = {year: db['{}_{}'.format(blackboard_name, year)] for year in range(2009,2019)}
     for tid, (year, coll) in zip(tag_ids, document_colls.items()):
         obj_id = ObjectId.from_datetime(datetime(year, 1, 1))
-        coll.insert({'_id': obj_id, 'T': 'Title {}'.format(tid), 'Tg' : [tid, tid-1], 'FOR' : [11, 12]})
+        coll.insert({'_id': obj_id, 'T': 'Title {}'.format(tid), 'oID' : tid, 'D' : 'Description', 'Tg' : [tid, tid-1], 'FOR' : [11, 12]})
+        coll.create_index([('_id', 1)], background = True)
+        coll.create_index([('oID', 1), ('_id', 1)], background = True)
+        coll.create_index([('Tg', 1), ('_id', 1), ('oID', 1)], background = True)
+        coll.create_index([('HSH', 1)], background = True)
 
 def generate_standard_blackboard(db, blackboard_name):
     blackboard_name = blackboard_name.upper()
@@ -70,3 +76,4 @@ def generate_standard_blackboard(db, blackboard_name):
     counter_coll = db[blackboard_name + CounterManager.counter_suffix]
     counter_coll.insert({"_id" : CounterManager.counter_type, CounterManager.counter_type : CounterManager.counter_type_standard})
     counter_coll.insert({"_id" : CounterManager.counter_next, CounterManager.counter_tag : tags_coll.count() + 1, CounterManager.counter_doc : document_coll.count()+1})
+    counter_coll.insert({"_id" : CounterManager.counter_indexes, CounterManager.counter_indexes : [{"_id" : 1}]})

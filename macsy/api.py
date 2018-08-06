@@ -1,30 +1,10 @@
 '''API used to connect to the database and load/drop blackboards.'''
 
 import urllib.parse
-from functools import wraps, partial
+from macsy.utils import validate_settings, validate_blackboard_name
 from pymongo import MongoClient
 from macsy.blackboards import Blackboard, DateBasedBlackboard
 from macsy.managers import TagManager, DocumentManager, DateBasedDocumentManager, CounterManager
-
-
-def validate_blackboard_name(func):
-    '''Decorator to validate the blackboard_name, checking if it contains forbidden characters.'''
-    @wraps(func)
-    def wrap(*args, **kwargs):
-        if any(x in args[1] for x in r" \$_"):
-            raise ValueError('Forbidden characters in blackboard name ("$","_"," ")')
-        return func(*args, **kwargs)
-    return wrap
-
-def validate_settings(func):
-    '''Decorator to validate the settings, checking if the right fields are present.'''
-    @wraps(func)
-    def wrap(*args, **kwargs):
-        required_fields = BlackboardAPI._setting_fields.values()
-        if len(set(required_fields).intersection(args[1])) is not len(required_fields):
-            raise ValueError('Incorrect or incomplete database settings supplied.')
-        return func(*args, **kwargs)
-    return wrap
 
 class BlackboardAPI():
     '''Entry object for loading and deleting blackboards.
@@ -156,7 +136,7 @@ class BlackboardAPI():
             date_based (:class:`bool`, optional): whether the blackboard is date-based or not.
 
         Returns:
-            :class:`str`: "DATEBASED" if blackboard is date-based, "STANDARD" otherwise.
+            :class:`str`: "DATE_BASED" if blackboard is date-based, "STANDARD" otherwise.
 
         Raises:
             :class:`ValueError`: If **blackboard_name** contains forbidden characters.

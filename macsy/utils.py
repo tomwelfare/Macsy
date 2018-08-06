@@ -1,8 +1,10 @@
+import sys, os
+import mongomock
+from functools import wraps
 from collections import namedtuple
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-from macsy.managers import TagManager, DocumentManager
 
 class QueryBuilder():
 
@@ -77,3 +79,59 @@ class QueryBuilder():
         if not isinstance(argument,list):
             raise ValueError('Argument needs to be a list: {}'.format(argument))
         return True
+
+def java_string_hashcode(string):
+    '''Generate a hash from a string that is equivalent to Java's String.hashCode() function.'''
+    hsh = 0
+    for char in string:
+        hsh = (31 * hsh + ord(char)) & 0xFFFFFFFF
+    return ((hsh + 0x80000000) & 0xFFFFFFFF) - 0x80000000
+
+def suppress_print_if_mocking(func):
+    '''Decorator to skip printing anything in a method if we are using mocking.
+
+    Useful when working with indexes as they are not implemented in the mocking library.
+    '''
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        if isinstance(args[0]._collection, mongomock.Collection):
+            with open(os.devnull, "w") as devnull:
+                old_stdout = sys.stdout
+                sys.stdout = devnull
+            try:  
+                yield
+            finally:
+                sys.stdout = old_stdout
+        return func(*args, **kwargs)
+    return wrap
+
+def check_admin(error):
+    '''Decorator to validate the if the user is admin or not.'''
+    def dec(func):
+        @wraps(func)
+        def wrap(*args, **kwargs):
+            if not args[0].admin_mode:
+                raise PermissionError(error)
+            return func(*args, **kwargs)
+        return wrap
+    return dec
+
+def validate_blackboard_name(func):
+    '''Decorator to validate the blackboard_name, checking if it contains forbidden characters.'''
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        if any(x in args[1] for x in r" \$_"):
+            raise ValueError('Forbidden characters in blackboard name ("$","_"," ")')
+        return func(*args, **kwargs)
+    return wrap
+
+def validate_settings(func):
+    '''Decorator to validate the settings, checking if the right fields are present.'''
+    @wraps(func)
+    def wrap(*args, **kwargs):
+        from macsy.api import BlackboardAPI
+        required_fields = BlackboardAPI._setting_fields.values()
+        if len(set(required_fields).intersection(args[1])) is not len(required_fields):
+            raise ValueError('Incorrect or incomplete database settings supplied.')
+        return func(*args, **kwargs)
+    return wrap
