@@ -11,7 +11,8 @@ from test import mock_data_generator
 from datetime import datetime
 from dateutil import parser as dtparser
 from bson.objectid import ObjectId
-from macsy.blackboards import BlackboardAPI, DateBasedBlackboard
+from macsy.api import BlackboardAPI
+from macsy.blackboards import DateBasedBlackboard
 from macsy.managers import TagManager, DocumentManager, DateBasedDocumentManager, CounterManager
 
 class TestDateBasedBlackboards(unittest.TestCase):

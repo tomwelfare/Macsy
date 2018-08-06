@@ -1,4 +1,9 @@
 Cursors
---------------------
-.. automodule:: macsy.cursors
+=======
+.. autosummary:: 
+    macsy.cursors.BlackboardCursor
+
+BlackboardCursor
+----------------
+.. autoclass:: macsy.cursors.BlackboardCursor
     :members:

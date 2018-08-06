@@ -5,7 +5,8 @@ home = '/'.join(os.path.abspath(__file__).split('/')[0:-2])
 sys.path.insert(0, home)
 from datetime import datetime
 from bson.objectid import ObjectId
-from macsy.blackboards import BlackboardAPI, Blackboard, DateBasedBlackboard
+from macsy.api import BlackboardAPI
+from macsy.blackboards import Blackboard, DateBasedBlackboard
 from macsy.managers import TagManager, DocumentManager, CounterManager
 
 def mock_client(*args, **kwargs):

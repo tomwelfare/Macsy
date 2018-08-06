@@ -1,17 +1,13 @@
-Welcome to Macsy's documentation!
-=================================
+Welcome to the documentation for Macsy!
+=======================================
+.. automodule:: macsy
+    :members:
 
 .. toctree::
    :maxdepth: 2
-   :caption: Contents:
+   :caption: Documentation:
 
    ../macsy
+   ../macsy.api
    ../macsy.blackboards
    ../macsy.cursors
-
-Indices and tables
-==================
-
-* :ref:`genindex`
-* :ref:`modindex`
-* :ref:`search`
