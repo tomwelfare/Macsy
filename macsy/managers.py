@@ -88,9 +88,7 @@ class TagManager(BaseManager):
         ctrl = 1 if any(map(tag_name.startswith, TagManager.control_tags)) else 0
         inherit = 0 if inheritable is not True else 1
         tag = {TagManager.tag_id : self._blackboard.counter_manager.get_next_id_and_increment(self._blackboard.counter_manager.counter_tag), 
-            TagManager.tag_name : tag_name, 
-            TagManager.tag_control : ctrl, 
-            TagManager.tag_inherit : inherit}
+            TagManager.tag_name : tag_name, TagManager.tag_control : ctrl, TagManager.tag_inherit : inherit}
         return self._collection.insert(tag)
 
     def update_tag(self, tag_id, tag_name, inheritable=None):
@@ -107,10 +105,7 @@ class TagManager(BaseManager):
         return self._collection.remove({TagManager.tag_id : tag_id})
 
     def get_tag(self, tag_id=None, tag_name=None):
-        if tag_id is not None:
-            return self._collection.find_one({TagManager.tag_id : tag_id})
-        else:
-            return self._collection.find_one({TagManager.tag_name : tag_name})
+        return self._collection.find_one({TagManager.tag_id : tag_id}) if tag_id is not None else self._collection.find_one({TagManager.tag_name : tag_name})
 
     def get_all_tags(self):
         return self._collection.find()
@@ -206,9 +201,7 @@ class DocumentManager(BaseManager):
         return hsh
 
     def _get_or_generate_id(self, doc):
-        if self.doc_id not in doc:
-            return self._blackboard.counter_manager.get_next_id_and_increment(self._blackboard.counter_manager.counter_doc)
-        return doc[self.doc_id]
+        return doc[self.doc_id] if self.doc_id in doc else self._blackboard.counter_manager.get_next_id_and_increment(self._blackboard.counter_manager.counter_doc)
 
     def _ensure_array_fields(self, doc):
         missing_tags = {field : [] for field in self.array_fields if field not in doc}
@@ -308,9 +301,7 @@ class DateBasedDocumentManager(DocumentManager):
         return (True, results[0][self.doc_id]) if results else (False, None)
 
     def _get_or_generate_id(self, doc):
-        if self.doc_id not in doc:
-            return ObjectId.from_datetime(datetime.now())
-        return doc[self.doc_id]
+        return doc[self.doc_id] if self.doc_id in doc else ObjectId.from_datetime(datetime.now())
 
     def _get_extremal_date(self, year, order):
         return self.get_date(self._collections[year].find().sort(self.doc_id, order).limit(1)[0])
@@ -319,7 +310,6 @@ class DateBasedDocumentManager(DocumentManager):
         return self.get_date(doc).year
 
     def _parse_year_range(self, **kwargs):
-        date = "{}-01-01"
-        min_date = kwargs.get('min_date', [date.format(self._min_year)])
-        max_date = kwargs.get('max_date', [date.format(self._max_year)])
+        min_date = kwargs.get('min_date', ["{}-01-01".format(self._min_year)])
+        max_date = kwargs.get('max_date', ["{}-01-01".format(self._max_year)])
         return (dtparser.parse(min_date[0]).year, dtparser.parse(max_date[0]).year)

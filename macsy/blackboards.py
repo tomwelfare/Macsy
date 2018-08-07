@@ -15,9 +15,7 @@ class Blackboard():
     '''
 
     def __init__(self, settings):
-        '''Constructor for Blackboard objects.
-
-        This should not be called directly. Blackboards can be accessed by loading them using the BlackboardAPI.
+        '''This should not be called directly. Blackboards can be accessed by loading them using the BlackboardAPI.
 
         Example:
             >>> api = BlackboardAPI(settings)
@@ -257,9 +255,7 @@ class DateBasedBlackboard(Blackboard):
     '''
 
     def __init__(self, settings):
-        '''Constructor for DateBasedBlackboard objects.
-
-        This should not be called directly. Blackboards can be accessed by loading them using the BlackboardAPI.
+        '''This should not be called directly. Blackboards can be accessed by loading them using the BlackboardAPI.
 
         Example:
             >>> api = BlackboardAPI(settings)

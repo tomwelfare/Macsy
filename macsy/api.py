@@ -10,8 +10,9 @@ class BlackboardAPI():
     '''Entry object for loading and deleting blackboards.
 
     Example:
+        >>> from macsy.api import BlackboardAPI
         >>> settings = {'username' : 'user', 'password' : 'password', 'dbname' : 'database', 'dburl' : 'localhost:37017'}
-        >>> api = blackboard_api.BlackboardAPI(settings)
+        >>> api = BlackboardAPI(settings)
         >>> blackboards_available = api.get_blackboard_names()
         >>> blackboard = api.load_blackboard('ARTICLE')
         >>> blackboard.count()
