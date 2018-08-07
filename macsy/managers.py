@@ -85,48 +85,37 @@ class TagManager(BaseManager):
         super().__init__(blackboard, suffix)
 
     def insert_tag(self, tag_name, inheritable=False):
-        ctrl = 1 if any(map(tag_name.startswith, TagManager.control_tags)) else 0
-        inherit = 0 if inheritable is not True else 1
-        tag = {TagManager.tag_id : self._blackboard.counter_manager.get_next_id_and_increment(self._blackboard.counter_manager.counter_tag), 
-            TagManager.tag_name : tag_name, TagManager.tag_control : ctrl, TagManager.tag_inherit : inherit}
+        tag = {TagManager.tag_id : self._blackboard.counter_manager.get_next_id_and_increment(self._blackboard.counter_manager.counter_tag)}
+        self._annotate_tag(tag, tag_name, inheritable)
         return self._collection.insert(tag)
 
     def update_tag(self, tag_id, tag_name, inheritable=None):
         tag = self.get_tag(tag_id)
-        if inheritable:
-            tag[TagManager.tag_inherit] = 1
-        tag[TagManager.tag_name] = tag_name
-        if any(map(tag_name.startswith, TagManager.control_tags)):
-            tag[TagManager.tag_control] = 1
-        return self._collection.update({TagManager.tag_id : tag_id}, {"$set" : tag})
+        self._annotate_tag(tag, tag_name, inheritable)
+        return self._collection.update({self.tag_id : tag_id}, {"$set" : tag})
 
     def delete_tag(self, tag_id):
         self._remove_tag_from_all(tag_id)
-        return self._collection.remove({TagManager.tag_id : tag_id})
+        return self._collection.remove({self.tag_id : tag_id})
 
     def get_tag(self, tag_id=None, tag_name=None):
-        return self._collection.find_one({TagManager.tag_id : tag_id}) if tag_id is not None else self._collection.find_one({TagManager.tag_name : tag_name})
+        return self._collection.find_one({self.tag_id : tag_id}) if tag_id is not None else self._collection.find_one({self.tag_name : tag_name})
 
     def get_all_tags(self):
         return self._collection.find()
 
     def is_control_tag(self, tag_id=None, tag_name=None):
-        return self._tag_has_property(TagManager.tag_control, tag_id, tag_name)
+        return self._tag_has_property(self.tag_control, tag_id, tag_name)
 
     def is_inheritable_tag(self, tag_id=None, tag_name=None):
-        return self._tag_has_property(TagManager.tag_inherit, tag_id, tag_name)
+        return self._tag_has_property(self.tag_inherit, tag_id, tag_name)
 
     def check_tag_type(self, tag, func):
         return func(tag_name=tag) if isinstance(tag, str) else func(tag_id=tag)
 
     def tag_exists(self, tag_name):
-        exists = self._collection.find_one({TagManager.tag_name : tag_name})
+        exists = self._collection.find_one({self.tag_name : tag_name})
         return True if exists is not None else False
-
-    def _tag_has_property(self, tag_property, tag_id=None, tag_name=None):
-        tag = self.get_tag(tag_id=tag_id) if tag_id is not None else self.get_tag(tag_name=tag_name)
-        test = tag[tag_property] if (tag is not None and tag_property in tag) else False
-        return bool(test)
 
     def get_canonical_tag(self, tag):
         full_tag = self.get_tag(tag_name=tag) if isinstance(tag,str) else self.get_tag(tag_id=tag)
@@ -134,9 +123,20 @@ class TagManager(BaseManager):
             raise ValueError('Tag does not exist: {}'.format(tag))
         return full_tag
 
+    def _tag_has_property(self, tag_property, tag_id=None, tag_name=None):
+        tag = self.get_tag(tag_id=tag_id) if tag_id is not None else self.get_tag(tag_name=tag_name)
+        test = tag[tag_property] if (tag is not None and tag_property in tag) else False
+        return bool(test)
+
     def _remove_tag_from_all(self, tag_id):
         for doc in self._blackboard.find(tags=[tag_id]):
             self._blackboard.remove_tag(doc[self._blackboard.document_manager.doc_id], tag_id)
+
+    def _annotate_tag(self, tag, tag_name, inheritable):
+        tag[self.tag_name] = tag_name
+        tag[self.tag_inherit] = 0 if inheritable is not True else 1
+        tag[self.tag_control] = 1 if any(map(tag_name.startswith, self.control_tags)) else 0
+        return tag
 
 class DocumentManager(BaseManager):
 
@@ -146,10 +146,7 @@ class DocumentManager(BaseManager):
 
     def __init__(self, blackboard):
         super().__init__(blackboard, '')
-        self.array_fields = [DocumentManager.doc_tags, DocumentManager.doc_control_tags]
-        self.doc_id = DocumentManager.doc_id
-        self.doc_tags = DocumentManager.doc_tags
-        self.doc_control_tags = DocumentManager.doc_control_tags
+        self.array_fields = [self.doc_tags, self.doc_control_tags]
         self._ensure_indexes(self._collection)
         
     def find(self, **kwargs):
@@ -230,9 +227,6 @@ class DateBasedDocumentManager(DocumentManager):
         super().__init__(blackboard)
         self._populate_collections()
         self.array_fields.extend(['Fds','LOC'])
-        self.doc_id = DateBasedDocumentManager.doc_id
-        self.doc_tags = DateBasedDocumentManager.doc_tags
-        self.doc_control_tags = DateBasedDocumentManager.doc_control_tags
 
     def _populate_collections(self):
         colls = ((coll.split('_')[-1], coll) for coll in self._blackboard._db.collection_names() if self._blackboard._name in coll)
